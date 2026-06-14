@@ -3,18 +3,21 @@ import { createClient } from '@/lib/supabase/server'
 import LogoutButton from '@/components/LogoutButton'
 import NuovaRichiestaButton from '@/components/NuovaRichiestaButton'
 import { SunHorizon, Building, UsersGroup, CalendarDays, ChartBar, DocumentText, ArrowLeft } from '@/components/icons'
+import CancelRequestButton from '@/components/CancelRequestButton'
 import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
   approved: 'Approvata',
   rejected: 'Rifiutata',
+  cancellation_requested: 'Annullamento richiesto',
 }
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 border border-amber-100',
   approved: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
   rejected: 'bg-red-50 text-red-600 border border-red-100',
+  cancellation_requested: 'bg-orange-50 text-orange-700 border border-orange-100',
 }
 
 export default async function DashboardPage() {
@@ -233,9 +236,14 @@ export default async function DashboardPage() {
                       {req.notes && <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{req.notes}</p>}
                     </div>
                   </div>
-                  <span className={`text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 ${STATUS_STYLE[req.status]}`}>
-                    {STATUS_LABEL[req.status]}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
+                      {STATUS_LABEL[req.status]}
+                    </span>
+                    {(req.status === 'pending' || req.status === 'approved') && (
+                      <CancelRequestButton requestId={req.id} userId={user.id} status={req.status} />
+                    )}
+                  </div>
                 </div>
               )
             })}

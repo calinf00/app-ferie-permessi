@@ -20,12 +20,14 @@ const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 border border-amber-100',
   approved: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
   rejected: 'bg-red-50 text-red-600 border border-red-100',
+  cancellation_requested: 'bg-orange-50 text-orange-700 border border-orange-100',
 }
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
   approved: 'Approvata',
   rejected: 'Rifiutata',
+  cancellation_requested: 'Annullamento richiesto',
 }
 
 function formatDate(d: string) {
@@ -41,10 +43,24 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
 
-  const filtered = filter === 'pending' ? requests.filter(r => r.status === 'pending') : requests
+  const needsAction = (s: string) => s === 'pending' || s === 'cancellation_requested'
+  const pendingCount = requests.filter(r => needsAction(r.status)).length
+
+  const filtered = filter === 'pending' ? requests.filter(r => needsAction(r.status)) : requests
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await supabase.from('leave_requests').update({ status }).eq('id', id)
+    router.refresh()
+  }
+
+  async function confirmCancellation(id: string) {
+    if (!confirm("Confermare l'annullamento? La richiesta verrà eliminata.")) return
+    await supabase.from('leave_requests').delete().eq('id', id)
+    router.refresh()
+  }
+
+  async function rejectCancellation(id: string) {
+    await supabase.from('leave_requests').update({ status: 'approved' }).eq('id', id)
     router.refresh()
   }
 
@@ -61,7 +77,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                 : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            {f === 'pending' ? `Da approvare ${requests.filter(r => r.status === 'pending').length > 0 ? `(${requests.filter(r => r.status === 'pending').length})` : ''}` : 'Tutte'}
+            {f === 'pending' ? `Da approvare ${pendingCount > 0 ? `(${pendingCount})` : ''}` : 'Tutte'}
           </button>
         ))}
       </div>
@@ -123,6 +139,24 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                         <XMark className="w-4 h-4" />
                       </button>
                     </>
+                  ) : req.status === 'cancellation_requested' ? (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
+                        {STATUS_LABEL[req.status]}
+                      </span>
+                      <button
+                        onClick={() => confirmCancellation(req.id)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+                      >
+                        Conferma annullamento
+                      </button>
+                      <button
+                        onClick={() => rejectCancellation(req.id)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                      >
+                        Rifiuta
+                      </button>
+                    </div>
                   ) : (
                     <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
                       {STATUS_LABEL[req.status]}

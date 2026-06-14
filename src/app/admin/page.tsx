@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import AdminRichieste, { type LeaveRequest } from '@/components/AdminRichieste'
 import AdminCollaboratori, { type UserWithRequests } from '@/components/AdminCollaboratori'
 import { DocumentText, UsersGroup, ArrowLeft } from '@/components/icons'
@@ -25,16 +26,20 @@ export default async function AdminPage({
 
   if (profile?.role !== 'admin') redirect('/dashboard')
 
+  // Use the service-role admin client for data queries so RLS does not hide
+  // other users' requests/profiles from the admin.
+  const admin = createAdminClient()
+
   const [requestsRes, usersRes] = await Promise.all([
     activeTab === 'richieste'
-      ? supabase
+      ? admin
           .from('leave_requests')
           .select('id, start_date, end_date, status, notes, created_at, profiles(full_name, email), leave_types(name, color)')
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: null }),
 
     activeTab === 'collaboratori'
-      ? supabase
+      ? admin
           .from('profiles')
           .select('id, full_name, role, is_active, company, team, hire_date, annual_leave_days, email')
           .order('full_name', { ascending: true })
@@ -44,7 +49,7 @@ export default async function AdminPage({
   let usersWithRequests: UserWithRequests[] = []
   if (activeTab === 'collaboratori' && usersRes.data) {
     const userIds = usersRes.data.map((u: any) => u.id)
-    const { data: leaveReqs } = await supabase
+    const { data: leaveReqs } = await admin
       .from('leave_requests')
       .select('user_id, start_date, end_date, status')
       .in('user_id', userIds)
