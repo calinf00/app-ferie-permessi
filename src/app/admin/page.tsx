@@ -36,7 +36,7 @@ export default async function AdminPage({
     if (activeTab === 'richieste') {
       const { data, error } = await admin
         .from('leave_requests')
-        .select('id, start_date, end_date, status, notes, created_at, profiles(full_name, email), leave_types(name, color)')
+        .select('id, start_date, end_date, status, notes, created_at, profiles!user_id(full_name, email), leave_types(name, color)')
         .order('created_at', { ascending: false })
       if (error) {
         console.error('[admin] leave_requests error:', error)
