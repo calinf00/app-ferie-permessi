@@ -26,9 +26,22 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { userId, email, password, full_name, company, team, hire_date, annual_leave_days, role, is_active } = body
 
+  if (!userId) {
+    return NextResponse.json({ error: 'userId mancante' }, { status: 400 })
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    console.error('[update-user] SUPABASE_SERVICE_ROLE_KEY non configurata nelle variabili di ambiente')
+    return NextResponse.json(
+      { error: 'Configurazione del server incompleta (service role key mancante)' },
+      { status: 500 }
+    )
+  }
+
   const adminClient = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    serviceRoleKey
   )
 
   // Update auth (email/password) if provided
@@ -38,7 +51,10 @@ export async function POST(request: NextRequest) {
 
   if (Object.keys(authUpdates).length > 0) {
     const { error } = await adminClient.auth.admin.updateUserById(userId, authUpdates)
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) {
+      console.error('[update-user] auth update fallito:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
   }
 
   // Update profile fields
@@ -54,7 +70,10 @@ export async function POST(request: NextRequest) {
 
   if (Object.keys(profileUpdates).length > 0) {
     const { error } = await adminClient.from('profiles').update(profileUpdates).eq('id', userId)
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) {
+      console.error('[update-user] profile update fallito:', error.message, profileUpdates)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
   }
 
   return NextResponse.json({ success: true })

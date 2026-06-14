@@ -46,7 +46,7 @@ export default async function DashboardPage() {
           <p className="text-lg font-semibold text-gray-800">Accesso non autorizzato</p>
           <p className="text-gray-500 mt-2 text-sm">Contatta l&apos;amministratore per richiedere l&apos;accesso a questa app.</p>
           <a
-            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? '/'}
+            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://work-apps-portal.vercel.app'}
             className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
             </a>
           )}
           <a
-            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? '/'}
+            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://work-apps-portal.vercel.app'}
             className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

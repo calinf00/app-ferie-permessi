@@ -27,7 +27,7 @@ export default function LoginPage() {
     }
   }
 
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? '/'
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://work-apps-portal.vercel.app'
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -61,7 +61,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
                 placeholder="nome@azienda.it"
               />
             </div>
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
                 placeholder="••••••••"
               />
             </div>

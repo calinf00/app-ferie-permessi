@@ -61,7 +61,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                 <select
                   value={form.leave_type_id}
                   onChange={e => setForm(f => ({ ...f, leave_type_id: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white"
                 >
                   {leaveTypes.map(lt => (
                     <option key={lt.id} value={lt.id}>{lt.name}</option>
@@ -77,7 +77,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                     required
                     value={form.start_date}
                     onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -88,7 +88,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                     value={form.end_date}
                     min={form.start_date}
                     onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors"
                   />
                 </div>
               </div>
@@ -99,7 +99,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                   rows={2}
                   value={form.notes}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors resize-none"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors resize-none"
                   placeholder="Motivazione o dettagli aggiuntivi..."
                 />
               </div>

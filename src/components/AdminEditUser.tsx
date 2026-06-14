@@ -73,7 +73,7 @@ export default function AdminEditUser({
     }
   }
 
-  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white'
+  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white'
   const labelCls = 'block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide'
 
   const monthlyRate = (parseInt(form.annual_leave_days) / 12).toFixed(2)
