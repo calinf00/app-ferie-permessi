@@ -9,10 +9,19 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: 'Rifiutata',
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+const STATUS_STYLE: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-700 border border-amber-100',
+  approved: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  rejected: 'bg-red-50 text-red-600 border border-red-100',
+}
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function daysDiff(start: string, end: string) {
+  const ms = new Date(end).getTime() - new Date(start).getTime()
+  return Math.round(ms / 86400000) + 1
 }
 
 export default async function DashboardPage() {
@@ -37,10 +46,14 @@ export default async function DashboardPage() {
   if (!permission && profile?.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <div className="text-center">
-          <p className="text-xl font-semibold text-gray-700">Accesso non autorizzato</p>
-          <p className="text-gray-500 mt-2 text-sm">Contatta l&apos;amministratore per richiedere l&apos;accesso.</p>
-          <a href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'} className="mt-4 inline-block text-blue-600 hover:underline text-sm">
+        <div className="text-center max-w-sm px-6">
+          <div className="text-4xl mb-4">🔒</div>
+          <p className="text-lg font-semibold text-gray-800">Accesso non autorizzato</p>
+          <p className="text-gray-500 mt-2 text-sm">Contatta l&apos;amministratore per richiedere l&apos;accesso a questa app.</p>
+          <a
+            href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'}
+            className="mt-6 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
             ← Torna al portale
           </a>
         </div>
@@ -58,55 +71,78 @@ export default async function DashboardPage() {
     supabase.from('leave_types').select('id, name, color'),
   ])
 
+  const firstName = profile?.full_name?.split(' ')[0]
+
   return (
-    <div className="min-h-screen bg-blue-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏖️</span>
-          <h1 className="text-lg font-bold text-gray-900">Ferie e Permessi</h1>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-100 px-6 h-14 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xl">🏖️</span>
+          <span className="font-semibold text-gray-900 text-sm">Ferie e Permessi</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{profile?.full_name || user.email}</span>
+        <div className="flex items-center gap-2">
           {profile?.role === 'admin' && (
-            <a href="/admin" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Admin</a>
+            <a href="/admin" className="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+              Admin
+            </a>
           )}
-          <a href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'} className="text-sm text-gray-400 hover:text-gray-600">Portale</a>
+          <a
+            href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'}
+            className="text-xs text-gray-400 hover:text-gray-600 font-medium px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            Portale
+          </a>
           <LogoutButton />
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Le mie richieste</h2>
+      <main className="max-w-3xl mx-auto px-6 py-10">
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {firstName ? `Ciao, ${firstName} 👋` : 'Le mie richieste'}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">Storico delle tue richieste di assenza</p>
+          </div>
           <NuovaRichiestaButton leaveTypes={leaveTypes ?? []} userId={user.id} />
         </div>
 
         {!requests || requests.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p>Nessuna richiesta ancora.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl mb-4">📋</div>
+            <p className="text-gray-700 font-medium">Nessuna richiesta ancora</p>
+            <p className="text-sm text-gray-400 mt-1">Clicca su &quot;+ Nuova richiesta&quot; per iniziare</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {requests.map((req: any) => (
-              <div key={req.id} className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className="inline-block w-2 h-2 rounded-full"
-                      style={{ backgroundColor: req.leave_types?.color || '#6B7280' }}
+            {requests.map((req: any) => {
+              const days = daysDiff(req.start_date, req.end_date)
+              return (
+                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between group hover:border-gray-200 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-1 h-12 rounded-full shrink-0"
+                      style={{ backgroundColor: req.leave_types?.color || '#CBD5E1' }}
                     />
-                    <span className="font-medium text-gray-900">{req.leave_types?.name}</span>
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-medium text-gray-900 text-sm">{req.leave_types?.name}</span>
+                        <span className="text-xs text-gray-400">·</span>
+                        <span className="text-xs text-gray-400">{days} {days === 1 ? 'giorno' : 'giorni'}</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(req.start_date)}
+                        {req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
+                      </p>
+                      {req.notes && <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{req.notes}</p>}
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(req.start_date).toLocaleDateString('it-IT')} — {new Date(req.end_date).toLocaleDateString('it-IT')}
-                  </p>
-                  {req.notes && <p className="text-xs text-gray-400 mt-1">{req.notes}</p>}
+                  <span className={`text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 ${STATUS_STYLE[req.status]}`}>
+                    {STATUS_LABEL[req.status]}
+                  </span>
                 </div>
-                <span className={`text-xs font-medium px-3 py-1 rounded-full ${STATUS_COLOR[req.status]}`}>
-                  {STATUS_LABEL[req.status]}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>
