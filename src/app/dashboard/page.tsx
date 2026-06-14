@@ -72,7 +72,7 @@ export default async function DashboardPage({
   const [{ data: requests }, { data: leaveTypes }] = await Promise.all([
     supabase
       .from('leave_requests')
-      .select('id, start_date, end_date, hours, status, notes, leave_types(name, color)')
+      .select('id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, leave_types(name, color)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -315,32 +315,51 @@ export default async function DashboardPage({
                 ? `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`
                 : `${days} ${days === 1 ? 'giorno' : 'giorni'}`
               return (
-                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-gray-200 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-1 h-12 rounded-full shrink-0"
-                      style={{ backgroundColor: req.leave_types?.color || '#CBD5E1' }}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-gray-900 text-sm">{req.leave_types?.name}</span>
-                        <span className="text-xs text-gray-400">·</span>
-                        <span className="text-xs text-gray-400">{durationLabel}</span>
+                <div
+                  key={req.id}
+                  className={`bg-white rounded-2xl border px-5 py-4 hover:border-gray-200 transition-colors ${req.admin_modified ? 'border-amber-100' : 'border-gray-100'}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 min-w-0">
+                      <div
+                        className="w-1 rounded-full shrink-0 mt-0.5"
+                        style={{ backgroundColor: req.leave_types?.color || '#CBD5E1', height: req.admin_modified ? 52 : 44 }}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-medium text-gray-900 text-sm">{req.leave_types?.name}</span>
+                          <span className="text-xs text-gray-400">·</span>
+                          <span className="text-xs text-gray-400">{durationLabel}</span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(req.start_date)}
+                          {!req.hours && req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
+                        </p>
+                        {req.notes && (
+                          <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{req.notes}</p>
+                        )}
+                        {req.admin_modified && (
+                          <div className="mt-2 flex flex-col gap-1">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full w-fit">
+                              ✏ Modificato dall&apos;admin
+                            </span>
+                            {req.admin_notes && (
+                              <p className="text-xs text-amber-700/80 bg-amber-50/60 rounded-lg px-2.5 py-1.5 mt-0.5">
+                                {req.admin_notes}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(req.start_date)}
-                        {!req.hours && req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
-                      </p>
-                      {req.notes && <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{req.notes}</p>}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
-                      {STATUS_LABEL[req.status]}
-                    </span>
-                    {(req.status === 'pending' || req.status === 'approved') && (
-                      <CancelRequestButton requestId={req.id} userId={user.id} status={req.status} />
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
+                        {STATUS_LABEL[req.status]}
+                      </span>
+                      {(req.status === 'pending' || req.status === 'approved') && (
+                        <CancelRequestButton requestId={req.id} userId={user.id} status={req.status} />
+                      )}
+                    </div>
                   </div>
                 </div>
               )

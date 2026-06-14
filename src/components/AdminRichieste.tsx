@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CheckMark, XMark } from '@/components/icons'
+import { CheckMark, XMark, Pencil } from '@/components/icons'
+import AdminEditRequest, { type RequestToEdit } from './AdminEditRequest'
 
 export type LeaveRequest = {
   id: string
@@ -12,6 +13,8 @@ export type LeaveRequest = {
   hours: number | null
   status: string
   notes: string | null
+  admin_notes: string | null
+  admin_modified: boolean
   created_at: string
   profiles: { full_name: string | null; email: string } | null
   leave_types: { name: string; color: string } | null
@@ -43,6 +46,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
   const supabase = createClient()
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
+  const [editing, setEditing] = useState<RequestToEdit | null>(null)
 
   const needsAction = (s: string) => s === 'pending' || s === 'cancellation_requested'
   const pendingCount = requests.filter(r => needsAction(r.status)).length
@@ -67,6 +71,10 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
 
   return (
     <div>
+      {editing && (
+        <AdminEditRequest request={editing} onClose={() => setEditing(null)} />
+      )}
+
       <div className="flex gap-2 mb-6">
         {(['pending', 'all'] as const).map(f => (
           <button
@@ -166,6 +174,13 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                       {STATUS_LABEL[req.status]}
                     </span>
                   )}
+                  <button
+                    onClick={() => setEditing(req)}
+                    title="Modifica comunicazione"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )
