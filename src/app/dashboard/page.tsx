@@ -186,16 +186,22 @@ export default async function DashboardPage({
             )}
           </div>
 
-          {/* Stats utente: solo giorni disponibili e comunicati */}
+          {/* Stats utente: totale / utilizzati / rimanenti */}
           {!isAdmin && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
-                <p className="text-2xl font-bold text-gray-900">{totalDays}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Giorni disponibili</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
-                <p className="text-2xl font-bold text-slate-700">{communicatedDays}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Già comunicati</p>
+            <div className="bg-gray-50 rounded-xl px-4 py-4">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{totalDays}</p>
+                  <p className="text-xs text-gray-400">Totale anno</p>
+                </div>
+                <div className="text-center border-x border-gray-200">
+                  <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
+                  <p className="text-xs text-gray-400">Utilizzati</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-slate-700">{Math.max(0, totalDays - leaveStats.usedDays)}</p>
+                  <p className="text-xs text-gray-400">Rimanenti</p>
+                </div>
               </div>
             </div>
           )}
