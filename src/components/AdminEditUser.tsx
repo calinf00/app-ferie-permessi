@@ -12,7 +12,10 @@ export type UserProfile = {
   is_active: boolean
   company: string | null
   team: string | null
+  job_title: string | null
   hire_date: string | null
+  end_date: string | null
+  notes: string | null
   annual_leave_days: number
 }
 
@@ -25,15 +28,18 @@ export default function AdminEditUser({
 }) {
   const router = useRouter()
   const [form, setForm] = useState({
-    full_name: user.full_name ?? '',
-    email: user.email,
-    password: '',
-    company: user.company ?? '',
-    team: user.team ?? '',
-    hire_date: user.hire_date ?? '',
+    full_name:         user.full_name         ?? '',
+    email:             user.email,
+    password:          '',
+    company:           user.company           ?? '',
+    team:              user.team              ?? '',
+    job_title:         user.job_title         ?? '',
+    hire_date:         user.hire_date         ?? '',
+    end_date:          user.end_date          ?? '',
+    notes:             user.notes             ?? '',
     annual_leave_days: String(user.annual_leave_days ?? 20),
-    role: user.role,
-    is_active: user.is_active,
+    role:              user.role,
+    is_active:         user.is_active,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -46,14 +52,17 @@ export default function AdminEditUser({
     setError('')
 
     const body: Record<string, unknown> = {
-      userId: user.id,
-      full_name: form.full_name,
-      company: form.company,
-      team: form.team,
-      hire_date: form.hire_date || null,
+      userId:            user.id,
+      full_name:         form.full_name,
+      company:           form.company,
+      team:              form.team,
+      job_title:         form.job_title,
+      hire_date:         form.hire_date || null,
+      end_date:          form.end_date  || null,
+      notes:             form.notes,
       annual_leave_days: parseInt(form.annual_leave_days) || 20,
-      role: form.role,
-      is_active: form.is_active,
+      role:              form.role,
+      is_active:         form.is_active,
     }
     if (form.email !== user.email) body.email = form.email
     if (form.password) body.password = form.password
@@ -77,7 +86,8 @@ export default function AdminEditUser({
   const labelCls = 'block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide'
 
   const monthlyRate = (parseInt(form.annual_leave_days) / 12).toFixed(2)
-  const weeklyRate = (parseInt(form.annual_leave_days) / 52).toFixed(2)
+  const weeklyRate  = (parseInt(form.annual_leave_days) / 52).toFixed(2)
+  const JOB_TITLES  = ['Tecnico', 'Sviluppatore', 'Designer', 'Responsabile di team', 'Direzione', 'Commerciale', 'Amministrazione', 'Consulente']
 
   return (
     <div
@@ -127,12 +137,30 @@ export default function AdminEditUser({
                 <label className={labelCls}>Team</label>
                 <input type="text" value={form.team} onChange={e => set('team', e.target.value)} className={inputCls} placeholder="Es. Sviluppo" />
               </div>
+              <div className="col-span-2">
+                <label className={labelCls}>Ruolo professionale</label>
+                <input
+                  type="text"
+                  list="job-titles-ferie"
+                  value={form.job_title}
+                  onChange={e => set('job_title', e.target.value)}
+                  className={inputCls}
+                  placeholder="Es. Tecnico, Responsabile di team..."
+                />
+                <datalist id="job-titles-ferie">
+                  {JOB_TITLES.map(t => <option key={t} value={t} />)}
+                </datalist>
+              </div>
               <div>
-                <label className={labelCls}>Data di ingresso</label>
+                <label className={labelCls}>Inizio collaborazione</label>
                 <input type="date" value={form.hire_date} onChange={e => set('hire_date', e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Giorni di riposo / anno</label>
+                <label className={labelCls}>Fine collaborazione</label>
+                <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} className={inputCls} min={form.hire_date || undefined} />
+              </div>
+              <div className="col-span-2">
+                <label className={labelCls}>Giorni di assenza / anno</label>
                 <input
                   type="number"
                   min="0"
@@ -141,13 +169,25 @@ export default function AdminEditUser({
                   onChange={e => set('annual_leave_days', e.target.value)}
                   className={inputCls}
                 />
+                {parseInt(form.annual_leave_days) > 0 && (
+                  <p className="text-xs text-gray-400 mt-2 bg-gray-50 rounded-lg px-3 py-2">
+                    Maturazione: <span className="font-medium text-gray-600">{monthlyRate} gg/mese</span> · <span className="font-medium text-gray-600">{weeklyRate} gg/settimana</span>
+                  </p>
+                )}
               </div>
             </div>
-            {parseInt(form.annual_leave_days) > 0 && (
-              <p className="text-xs text-gray-400 mt-2 bg-gray-50 rounded-lg px-3 py-2">
-                Maturazione: <span className="font-medium text-gray-600">{monthlyRate} gg/mese</span> · <span className="font-medium text-gray-600">{weeklyRate} gg/settimana</span>
-              </p>
-            )}
+          </div>
+
+          {/* Note */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Note</p>
+            <textarea
+              rows={3}
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              className={`${inputCls} resize-none`}
+              placeholder="Informazioni aggiuntive sul collaboratore..."
+            />
           </div>
 
           {/* Ruolo e stato */}

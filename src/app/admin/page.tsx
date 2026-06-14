@@ -52,7 +52,7 @@ export default async function AdminPage({
     if (activeTab === 'collaboratori') {
       const { data: usersData, error: usersError } = await admin
         .from('profiles')
-        .select('id, full_name, role, is_active, company, team, hire_date, annual_leave_days, email')
+        .select('id, full_name, role, is_active, company, team, job_title, hire_date, end_date, notes, annual_leave_days, email')
         .order('full_name', { ascending: true })
       if (usersError) {
         console.error('[admin] profiles error:', usersError)

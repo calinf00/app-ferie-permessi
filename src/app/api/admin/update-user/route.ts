@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
 
   const body = await request.json()
-  const { userId, email, password, full_name, company, team, hire_date, annual_leave_days, role, is_active } = body
+  const { userId, email, password, full_name, company, team, job_title, hire_date, end_date, notes, annual_leave_days, role, is_active } = body
 
   if (!userId) {
     return NextResponse.json({ error: 'userId mancante' }, { status: 400 })
@@ -61,9 +61,12 @@ export async function POST(request: NextRequest) {
   const profileUpdates: Record<string, unknown> = {}
   if (full_name !== undefined) profileUpdates.full_name = full_name
   if (email !== undefined) profileUpdates.email = email
-  if (company !== undefined) profileUpdates.company = company
-  if (team !== undefined) profileUpdates.team = team
-  if (hire_date !== undefined) profileUpdates.hire_date = hire_date || null
+  if (company           !== undefined) profileUpdates.company           = company    || null
+  if (team              !== undefined) profileUpdates.team              = team       || null
+  if (job_title         !== undefined) profileUpdates.job_title         = job_title  || null
+  if (hire_date         !== undefined) profileUpdates.hire_date         = hire_date  || null
+  if (end_date          !== undefined) profileUpdates.end_date          = end_date   || null
+  if (notes             !== undefined) profileUpdates.notes             = notes      || null
   if (annual_leave_days !== undefined) profileUpdates.annual_leave_days = Number(annual_leave_days)
   if (role !== undefined) profileUpdates.role = role
   if (is_active !== undefined) profileUpdates.is_active = is_active

@@ -6,6 +6,9 @@ import AdminEditUser, { type UserProfile } from '@/components/AdminEditUser'
 import { calcLeaveStats } from '@/lib/leave-utils'
 
 export type UserWithRequests = UserProfile & {
+  job_title:  string | null
+  end_date:   string | null
+  notes:      string | null
   leave_requests: { start_date: string; end_date: string; status: string }[]
 }
 
