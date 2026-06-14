@@ -9,6 +9,7 @@ export type LeaveRequest = {
   id: string
   start_date: string
   end_date: string
+  hours: number | null
   status: string
   notes: string | null
   created_at: string
@@ -93,6 +94,9 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
         <div className="flex flex-col gap-3">
           {filtered.map(req => {
             const days = daysDiff(req.start_date, req.end_date)
+            const durationLabel = req.hours
+              ? `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`
+              : `${days} ${days === 1 ? 'giorno' : 'giorni'}`
             const name = req.profiles?.full_name || req.profiles?.email || 'Utente'
             const initials = name.slice(0, 2).toUpperCase()
             return (
@@ -113,8 +117,8 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                       </div>
                       <p className="text-sm text-gray-500">
                         {formatDate(req.start_date)}
-                        {req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
-                        <span className="text-gray-400"> · {days} {days === 1 ? 'giorno' : 'giorni'}</span>
+                        {!req.hours && req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
+                        <span className="text-gray-400"> · {durationLabel}</span>
                       </p>
                       {req.notes && <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{req.notes}</p>}
                     </div>

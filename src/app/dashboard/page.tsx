@@ -72,7 +72,7 @@ export default async function DashboardPage({
   const [{ data: requests }, { data: leaveTypes }] = await Promise.all([
     supabase
       .from('leave_requests')
-      .select('id, start_date, end_date, status, notes, leave_types(name, color)')
+      .select('id, start_date, end_date, hours, status, notes, leave_types(name, color)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -103,6 +103,7 @@ export default async function DashboardPage({
     teamRequests = ((teamData as unknown as TeamRequest[]) ?? []).filter(r => r.profiles?.team === profile.team)
   }
 
+  const isAdmin = profile?.role === 'admin'
   const firstName = profile?.full_name?.split(' ')[0]
   const initials = (profile?.full_name ?? user.email ?? '').slice(0, 2).toUpperCase()
 
@@ -176,49 +177,51 @@ export default async function DashboardPage({
             )}
           </div>
 
-          {/* Leave stats */}
-          <div className="bg-gray-50 rounded-xl px-4 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                <ChartBar className="w-3.5 h-3.5" />
-                Giorni di riposo {new Date().getFullYear()}
-              </span>
-              <span className="text-xs text-gray-400">
-                {leaveStats.annualDays} gg/anno
-              </span>
-            </div>
+          {/* Leave stats — solo admin */}
+          {isAdmin && (
+            <div className="bg-gray-50 rounded-xl px-4 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <ChartBar className="w-3.5 h-3.5" />
+                  Giorni di riposo {new Date().getFullYear()}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {leaveStats.annualDays} gg/anno
+                </span>
+              </div>
 
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full bg-slate-700 rounded-full transition-all duration-700"
-                  style={{ width: leaveStats.annualDays > 0 ? `${Math.min(100, Math.round((leaveStats.accrued / leaveStats.annualDays) * 100))}%` : '0%' }}
-                />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-slate-700 rounded-full transition-all duration-700"
+                    style={{ width: leaveStats.annualDays > 0 ? `${Math.min(100, Math.round((leaveStats.accrued / leaveStats.annualDays) * 100))}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                  {leaveStats.remaining} <span className="text-xs font-normal text-gray-400">rimanenti</span>
+                </span>
               </div>
-              <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                {leaveStats.remaining} <span className="text-xs font-normal text-gray-400">rimanenti</span>
-              </span>
-            </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">{leaveStats.accrued}</p>
-                <p className="text-xs text-gray-400">Maturati</p>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{leaveStats.accrued}</p>
+                  <p className="text-xs text-gray-400">Maturati</p>
+                </div>
+                <div className="text-center border-x border-gray-200">
+                  <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
+                  <p className="text-xs text-gray-400">Usati</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-slate-700">{leaveStats.remaining}</p>
+                  <p className="text-xs text-gray-400">Rimanenti</p>
+                </div>
               </div>
-              <div className="text-center border-x border-gray-200">
-                <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
-                <p className="text-xs text-gray-400">Usati</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-slate-700">{leaveStats.remaining}</p>
-                <p className="text-xs text-gray-400">Rimanenti</p>
-              </div>
-            </div>
 
-            <p className="text-xs text-center text-gray-400 mt-3">
-              Maturazione: {leaveStats.monthlyRate} gg/mese · {leaveStats.weeklyRate} gg/settimana
-            </p>
-          </div>
+              <p className="text-xs text-center text-gray-400 mt-3">
+                Maturazione: {leaveStats.monthlyRate} gg/mese · {leaveStats.weeklyRate} gg/settimana
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Tab navigation */}
@@ -279,6 +282,9 @@ export default async function DashboardPage({
           <div className="flex flex-col gap-3">
             {requests.map((req: any) => {
               const days = daysDiff(req.start_date, req.end_date)
+              const durationLabel = req.hours
+                ? `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`
+                : `${days} ${days === 1 ? 'giorno' : 'giorni'}`
               return (
                 <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-gray-200 transition-colors">
                   <div className="flex items-center gap-4">
@@ -290,11 +296,11 @@ export default async function DashboardPage({
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="font-medium text-gray-900 text-sm">{req.leave_types?.name}</span>
                         <span className="text-xs text-gray-400">·</span>
-                        <span className="text-xs text-gray-400">{days} {days === 1 ? 'giorno' : 'giorni'}</span>
+                        <span className="text-xs text-gray-400">{durationLabel}</span>
                       </div>
                       <p className="text-sm text-gray-500">
                         {formatDate(req.start_date)}
-                        {req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
+                        {!req.hours && req.start_date !== req.end_date && <> — {formatDate(req.end_date)}</>}
                       </p>
                       {req.notes && <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{req.notes}</p>}
                     </div>
