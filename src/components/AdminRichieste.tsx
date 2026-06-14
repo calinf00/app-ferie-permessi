@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CheckMark, XMark } from '@/components/icons'
 
 export type LeaveRequest = {
   id: string
@@ -67,7 +68,9 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl mb-4">✅</div>
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
+            <CheckMark className="w-7 h-7 text-emerald-500" />
+          </div>
           <p className="text-gray-700 font-medium">Nessuna richiesta {filter === 'pending' ? 'in attesa' : ''}</p>
         </div>
       ) : (
@@ -107,15 +110,17 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                     <>
                       <button
                         onClick={() => updateStatus(req.id, 'approved')}
-                        className="bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-medium hover:bg-emerald-600 transition-colors"
+                        title="Approva"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
                       >
-                        Approva
+                        <CheckMark className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => updateStatus(req.id, 'rejected')}
-                        className="bg-red-50 text-red-600 border border-red-100 text-xs px-4 py-2 rounded-xl font-medium hover:bg-red-100 transition-colors"
+                        title="Rifiuta"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                       >
-                        Rifiuta
+                        <XMark className="w-4 h-4" />
                       </button>
                     </>
                   ) : (

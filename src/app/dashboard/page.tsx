@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from '@/components/LogoutButton'
 import NuovaRichiestaButton from '@/components/NuovaRichiestaButton'
+import { SunHorizon, Building, UsersGroup, CalendarDays, ChartBar, DocumentText, ArrowLeft } from '@/components/icons'
+import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
@@ -15,15 +17,6 @@ const STATUS_STYLE: Record<string, string> = {
   rejected: 'bg-red-50 text-red-600 border border-red-100',
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function daysDiff(start: string, end: string) {
-  const ms = new Date(end).getTime() - new Date(start).getTime()
-  return Math.round(ms / 86400000) + 1
-}
-
 export default async function DashboardPage() {
   const supabase = await createClient()
 
@@ -32,7 +25,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('full_name, role, company, team, hire_date, annual_leave_days')
     .eq('id', user.id)
     .single()
 
@@ -45,16 +38,19 @@ export default async function DashboardPage() {
 
   if (!permission && profile?.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-sm px-6">
-          <div className="text-4xl mb-4">🔒</div>
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <SunHorizon className="w-8 h-8 text-gray-400" />
+          </div>
           <p className="text-lg font-semibold text-gray-800">Accesso non autorizzato</p>
           <p className="text-gray-500 mt-2 text-sm">Contatta l&apos;amministratore per richiedere l&apos;accesso a questa app.</p>
           <a
-            href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'}
-            className="mt-6 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? '/'}
+            className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
-            ← Torna al portale
+            <ArrowLeft className="w-4 h-4" />
+            Torna al portale
           </a>
         </div>
       </div>
@@ -71,54 +67,154 @@ export default async function DashboardPage() {
     supabase.from('leave_types').select('id, name, color'),
   ])
 
+  const approvedRequests = (requests ?? [])
+    .filter((r: any) => r.status === 'approved')
+    .map((r: any) => ({ start_date: r.start_date, end_date: r.end_date }))
+
+  const leaveStats = calcLeaveStats(
+    profile?.hire_date ?? null,
+    profile?.annual_leave_days ?? 20,
+    approvedRequests
+  )
+
   const firstName = profile?.full_name?.split(' ')[0]
+  const initials = (profile?.full_name ?? user.email ?? '').slice(0, 2).toUpperCase()
 
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-6 h-14 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">🏖️</span>
-          <span className="font-semibold text-gray-900 text-sm">Ferie e Permessi</span>
+          <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
+            <SunHorizon className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-semibold text-gray-900 text-sm">Giorni di Riposo</span>
         </div>
         <div className="flex items-center gap-2">
           {profile?.role === 'admin' && (
-            <a href="/admin" className="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+            <a href="/admin" className="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
               Admin
             </a>
           )}
           <a
-            href={process.env.NEXT_PUBLIC_PORTAL_URL || '/'}
-            className="text-xs text-gray-400 hover:text-gray-600 font-medium px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+            href={process.env.NEXT_PUBLIC_PORTAL_URL ?? '/'}
+            className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1"
           >
+            <ArrowLeft className="w-3.5 h-3.5" />
             Portale
           </a>
+          <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center text-white text-xs font-semibold select-none">
+            {initials}
+          </div>
           <LogoutButton />
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {firstName ? `Ciao, ${firstName} 👋` : 'Le mie richieste'}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">Storico delle tue richieste di assenza</p>
+      <main className="max-w-3xl mx-auto px-6 py-8">
+        {/* Greeting */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {firstName ? `Ciao, ${firstName}` : 'La mia area'}
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">Storico delle tue richieste di assenza</p>
+        </div>
+
+        {/* Profile + leave stats card */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center text-white font-semibold select-none">
+              {initials}
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">{profile?.full_name ?? user.email}</p>
+              {profile?.full_name && <p className="text-xs text-gray-400">{user.email}</p>}
+            </div>
           </div>
+
+          {/* Detail chips */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-4">
+            {profile?.company && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Building className="w-3.5 h-3.5 text-gray-400" /> {profile.company}
+              </span>
+            )}
+            {profile?.team && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                <UsersGroup className="w-3.5 h-3.5 text-gray-400" /> {profile.team}
+              </span>
+            )}
+            {profile?.hire_date && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
+                Dal {formatDate(profile.hire_date)}
+              </span>
+            )}
+          </div>
+
+          {/* Leave stats */}
+          <div className="bg-gray-50 rounded-xl px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                <ChartBar className="w-3.5 h-3.5" />
+                Giorni di riposo {new Date().getFullYear()}
+              </span>
+              <span className="text-xs text-gray-400">
+                {leaveStats.annualDays} gg/anno
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="h-full bg-slate-700 rounded-full transition-all duration-700"
+                  style={{ width: leaveStats.annualDays > 0 ? `${Math.min(100, Math.round((leaveStats.accrued / leaveStats.annualDays) * 100))}%` : '0%' }}
+                />
+              </div>
+              <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                {leaveStats.remaining} <span className="text-xs font-normal text-gray-400">rimanenti</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">{leaveStats.accrued}</p>
+                <p className="text-xs text-gray-400">Maturati</p>
+              </div>
+              <div className="text-center border-x border-gray-200">
+                <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
+                <p className="text-xs text-gray-400">Usati</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-slate-700">{leaveStats.remaining}</p>
+                <p className="text-xs text-gray-400">Rimanenti</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-gray-400 mt-3">
+              Maturazione: {leaveStats.monthlyRate} gg/mese · {leaveStats.weeklyRate} gg/settimana
+            </p>
+          </div>
+        </div>
+
+        {/* Requests header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-900 text-sm">Le mie richieste</h3>
           <NuovaRichiestaButton leaveTypes={leaveTypes ?? []} userId={user.id} />
         </div>
 
         {!requests || requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl mb-4">📋</div>
+            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <DocumentText className="w-7 h-7 text-gray-400" />
+            </div>
             <p className="text-gray-700 font-medium">Nessuna richiesta ancora</p>
-            <p className="text-sm text-gray-400 mt-1">Clicca su &quot;+ Nuova richiesta&quot; per iniziare</p>
+            <p className="text-sm text-gray-400 mt-1">Clicca su &quot;Nuova richiesta&quot; per iniziare</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {requests.map((req: any) => {
               const days = daysDiff(req.start_date, req.end_date)
               return (
-                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between group hover:border-gray-200 transition-colors">
+                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-gray-200 transition-colors">
                   <div className="flex items-center gap-4">
                     <div
                       className="w-1 h-12 rounded-full shrink-0"

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Plus, XMark } from '@/components/icons'
 
 type LeaveType = { id: string; name: string; color: string }
 
@@ -32,9 +33,9 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors flex items-center gap-1.5"
+        className="shrink-0 bg-slate-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors flex items-center gap-1.5"
       >
-        <span className="text-base leading-none">+</span>
+        <Plus className="w-4 h-4" />
         <span>Nuova richiesta</span>
       </button>
 
@@ -48,9 +49,9 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
               <h3 className="font-semibold text-gray-900">Nuova richiesta</h3>
               <button
                 onClick={() => setOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors text-lg leading-none"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                ×
+                <XMark className="w-5 h-5" />
               </button>
             </div>
 
