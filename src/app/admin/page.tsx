@@ -26,39 +26,50 @@ export default async function AdminPage({
 
   if (profile?.role !== 'admin') redirect('/dashboard')
 
-  // Use the service-role admin client for data queries so RLS does not hide
-  // other users' requests/profiles from the admin.
-  const admin = createAdminClient()
-
-  const [requestsRes, usersRes] = await Promise.all([
-    activeTab === 'richieste'
-      ? admin
-          .from('leave_requests')
-          .select('id, start_date, end_date, status, notes, created_at, profiles(full_name, email), leave_types(name, color)')
-          .order('created_at', { ascending: false })
-      : Promise.resolve({ data: null }),
-
-    activeTab === 'collaboratori'
-      ? admin
-          .from('profiles')
-          .select('id, full_name, role, is_active, company, team, hire_date, annual_leave_days, email')
-          .order('full_name', { ascending: true })
-      : Promise.resolve({ data: null }),
-  ])
-
+  let adminError: string | null = null
+  let requests: LeaveRequest[] = []
   let usersWithRequests: UserWithRequests[] = []
-  if (activeTab === 'collaboratori' && usersRes.data) {
-    const userIds = usersRes.data.map((u: any) => u.id)
-    const { data: leaveReqs } = await admin
-      .from('leave_requests')
-      .select('user_id, start_date, end_date, status')
-      .in('user_id', userIds)
-      .eq('status', 'approved')
 
-    usersWithRequests = usersRes.data.map((u: any) => ({
-      ...u,
-      leave_requests: (leaveReqs ?? []).filter((r: any) => r.user_id === u.id),
-    }))
+  try {
+    const admin = createAdminClient()
+
+    if (activeTab === 'richieste') {
+      const { data, error } = await admin
+        .from('leave_requests')
+        .select('id, start_date, end_date, status, notes, created_at, profiles(full_name, email), leave_types(name, color)')
+        .order('created_at', { ascending: false })
+      if (error) {
+        console.error('[admin] leave_requests error:', error)
+        adminError = error.message
+      } else {
+        requests = (data as unknown as LeaveRequest[]) ?? []
+      }
+    }
+
+    if (activeTab === 'collaboratori') {
+      const { data: usersData, error: usersError } = await admin
+        .from('profiles')
+        .select('id, full_name, role, is_active, company, team, hire_date, annual_leave_days, email')
+        .order('full_name', { ascending: true })
+      if (usersError) {
+        console.error('[admin] profiles error:', usersError)
+        adminError = usersError.message
+      } else if (usersData) {
+        const userIds = usersData.map((u: any) => u.id)
+        const { data: leaveReqs } = await admin
+          .from('leave_requests')
+          .select('user_id, start_date, end_date, status')
+          .in('user_id', userIds)
+          .eq('status', 'approved')
+        usersWithRequests = usersData.map((u: any) => ({
+          ...u,
+          leave_requests: (leaveReqs ?? []).filter((r: any) => r.user_id === u.id),
+        }))
+      }
+    }
+  } catch (e: any) {
+    console.error('[admin] createAdminClient error:', e.message)
+    adminError = e.message
   }
 
   return (
@@ -76,6 +87,12 @@ export default async function AdminPage({
       </nav>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
+        {adminError && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            Errore di configurazione: {adminError}
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-8">
           <a
@@ -103,7 +120,7 @@ export default async function AdminPage({
         </div>
 
         {activeTab === 'richieste' && (
-          <AdminRichieste requests={(requestsRes.data as unknown as LeaveRequest[]) ?? []} />
+          <AdminRichieste requests={requests} />
         )}
 
         {activeTab === 'collaboratori' && (
