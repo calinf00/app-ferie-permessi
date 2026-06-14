@@ -89,6 +89,15 @@ export default async function DashboardPage({
     approvedRequests
   )
 
+  // Giorni totali comunicati (non rifiutati, solo giornate intere) per la vista utente
+  const communicatedDays = (requests ?? [])
+    .filter((r: any) => r.status !== 'rejected')
+    .reduce((sum: number, r: any) => {
+      if (r.hours) return sum
+      return sum + daysDiff(r.start_date, r.end_date)
+    }, 0)
+  const totalDays = profile?.annual_leave_days ?? 20
+
   let teamRequests: TeamRequest[] = []
   if (activeTab === 'team' && profile?.team) {
     const today = new Date().toISOString().split('T')[0]
@@ -176,6 +185,20 @@ export default async function DashboardPage({
               </span>
             )}
           </div>
+
+          {/* Stats utente: solo giorni disponibili e comunicati */}
+          {!isAdmin && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-gray-900">{totalDays}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Giorni disponibili</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-slate-700">{communicatedDays}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Già comunicati</p>
+              </div>
+            </div>
+          )}
 
           {/* Leave stats — solo admin */}
           {isAdmin && (
