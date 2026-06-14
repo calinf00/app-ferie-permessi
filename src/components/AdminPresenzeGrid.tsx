@@ -441,7 +441,7 @@ export default function AdminPresenzeGrid({
                 <tr key={profile.id}>
                   {/* Sticky name cell */}
                   <td
-                    className="sticky left-0 z-10 border-r border-b border-gray-100 px-3 py-2"
+                    className="sticky left-0 z-20 border-r border-b border-gray-100 px-3 py-2"
                     style={{ minWidth: NAME_COL_W, width: NAME_COL_W, backgroundColor: nameBg }}
                   >
                     <div className="flex items-center gap-2">
