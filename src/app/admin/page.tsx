@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminRichieste, { type LeaveRequest } from '@/components/AdminRichieste'
 import AdminCollaboratori, { type UserWithRequests } from '@/components/AdminCollaboratori'
-import { DocumentText, UsersGroup, ArrowLeft } from '@/components/icons'
+import AdminPresenze, { type Profile as PresenzeProfile, type LeaveEntry } from '@/components/AdminPresenze'
+import { DocumentText, UsersGroup, CalendarDays, ArrowLeft } from '@/components/icons'
 
 export default async function AdminPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function AdminPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const { tab } = await searchParams
-  const activeTab = tab === 'collaboratori' ? 'collaboratori' : 'richieste'
+  const activeTab = tab === 'collaboratori' ? 'collaboratori' : tab === 'presenze' ? 'presenze' : 'richieste'
 
   const supabase = await createClient()
 
@@ -29,6 +30,8 @@ export default async function AdminPage({
   let adminError: string | null = null
   let requests: LeaveRequest[] = []
   let usersWithRequests: UserWithRequests[] = []
+  let presenzeProfiles: PresenzeProfile[] = []
+  let presenzeRequests: LeaveEntry[] = []
 
   try {
     const admin = createAdminClient()
@@ -65,6 +68,29 @@ export default async function AdminPage({
           ...u,
           leave_requests: (leaveReqs ?? []).filter((r: any) => r.user_id === u.id),
         }))
+      }
+    }
+
+    if (activeTab === 'presenze') {
+      const [{ data: profilesData, error: profilesError }, { data: leaveData, error: leaveError }] = await Promise.all([
+        admin
+          .from('profiles')
+          .select('id, full_name, email, team, company, is_active')
+          .eq('is_active', true)
+          .order('full_name'),
+        admin
+          .from('leave_requests')
+          .select('id, start_date, end_date, user_id, profiles!user_id(full_name, email, team, company), leave_types(name, color)')
+          .eq('status', 'approved')
+          .gte('end_date', `${new Date().getFullYear()}-01-01`)
+          .order('start_date'),
+      ])
+      if (profilesError || leaveError) {
+        console.error('[admin] presenze error:', profilesError ?? leaveError)
+        adminError = (profilesError ?? leaveError)!.message
+      } else {
+        presenzeProfiles = (profilesData as unknown as PresenzeProfile[]) ?? []
+        presenzeRequests = (leaveData as unknown as LeaveEntry[]) ?? []
       }
     }
   } catch (e: any) {
@@ -117,6 +143,17 @@ export default async function AdminPage({
             <UsersGroup className="w-4 h-4" />
             Collaboratori
           </a>
+          <a
+            href="/admin?tab=presenze"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'presenze'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" />
+            Presenze
+          </a>
         </div>
 
         {activeTab === 'richieste' && (
@@ -125,6 +162,10 @@ export default async function AdminPage({
 
         {activeTab === 'collaboratori' && (
           <AdminCollaboratori users={usersWithRequests} />
+        )}
+
+        {activeTab === 'presenze' && (
+          <AdminPresenze profiles={presenzeProfiles} requests={presenzeRequests} />
         )}
       </main>
     </div>

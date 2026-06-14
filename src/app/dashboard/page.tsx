@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import LogoutButton from '@/components/LogoutButton'
 import NuovaRichiestaButton from '@/components/NuovaRichiestaButton'
+import TeamView, { type TeamRequest } from '@/components/TeamView'
 import { SunHorizon, Building, UsersGroup, CalendarDays, ChartBar, DocumentText, ArrowLeft } from '@/components/icons'
 import CancelRequestButton from '@/components/CancelRequestButton'
 import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
@@ -20,7 +22,14 @@ const STATUS_STYLE: Record<string, string> = {
   cancellation_requested: 'bg-orange-50 text-orange-700 border border-orange-100',
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const { tab } = await searchParams
+  const activeTab = tab === 'team' ? 'team' : 'richieste'
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -79,6 +88,20 @@ export default async function DashboardPage() {
     profile?.annual_leave_days ?? 20,
     approvedRequests
   )
+
+  let teamRequests: TeamRequest[] = []
+  if (activeTab === 'team' && profile?.team) {
+    const today = new Date().toISOString().split('T')[0]
+    const admin = createAdminClient()
+    const { data: teamData } = await admin
+      .from('leave_requests')
+      .select('id, start_date, end_date, status, user_id, profiles!user_id(full_name, email, team), leave_types(name, color)')
+      .eq('status', 'approved')
+      .gte('end_date', today)
+      .neq('user_id', user.id)
+      .order('start_date', { ascending: true })
+    teamRequests = ((teamData as unknown as TeamRequest[]) ?? []).filter(r => r.profiles?.team === profile.team)
+  }
 
   const firstName = profile?.full_name?.split(' ')[0]
   const initials = (profile?.full_name ?? user.email ?? '').slice(0, 2).toUpperCase()
@@ -198,6 +221,46 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Tab navigation */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+          <a
+            href="/dashboard"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'richieste'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <DocumentText className="w-4 h-4" />
+            Le mie richieste
+          </a>
+          <a
+            href="/dashboard?tab=team"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'team'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <UsersGroup className="w-4 h-4" />
+            Il mio team
+          </a>
+        </div>
+
+        {activeTab === 'team' ? (
+          profile?.team ? (
+            <TeamView requests={teamRequests} userTeam={profile.team} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                <UsersGroup className="w-7 h-7 text-gray-400" />
+              </div>
+              <p className="text-gray-700 font-medium">Nessun team assegnato</p>
+              <p className="text-sm text-gray-400 mt-1">Contatta l&apos;amministratore per essere assegnato a un team</p>
+            </div>
+          )
+        ) : (
+          <>
         {/* Requests header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900 text-sm">Le mie richieste</h3>
@@ -248,6 +311,8 @@ export default async function DashboardPage() {
               )
             })}
           </div>
+        )}
+          </>
         )}
       </main>
     </div>
