@@ -73,7 +73,7 @@ export default function AdminEditUser({
     }
   }
 
-  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors bg-white'
+  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white'
   const labelCls = 'block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide'
 
   const monthlyRate = (parseInt(form.annual_leave_days) / 12).toFixed(2)
@@ -183,7 +183,7 @@ export default function AdminEditUser({
             <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors">
               Annulla
             </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+            <button type="submit" disabled={loading} className="flex-1 bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
               {loading ? 'Salvataggio...' : 'Salva modifiche'}
             </button>
           </div>

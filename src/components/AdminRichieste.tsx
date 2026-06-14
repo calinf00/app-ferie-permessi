@@ -57,7 +57,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
             onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-xl text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-blue-600 text-white'
+                ? 'bg-slate-900 text-white'
                 : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -82,7 +82,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
             return (
               <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-gray-200 transition-colors">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {initials}
                   </div>
                   <div className="flex items-center gap-3 min-w-0">

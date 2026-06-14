@@ -91,7 +91,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           {profile?.role === 'admin' && (
-            <a href="/admin" className="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+            <a href="/admin" className="text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors">
               Admin
             </a>
           )}

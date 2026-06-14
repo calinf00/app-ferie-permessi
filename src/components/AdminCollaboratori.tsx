@@ -43,7 +43,7 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                       {u.full_name && <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-slate-100 text-slate-700'}`}>
                         {u.role === 'admin' ? 'Admin' : 'Collaboratore'}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
@@ -51,7 +51,7 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                       </span>
                       <button
                         onClick={() => setEditing(u)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                         title="Modifica"
                       >
                         <Pencil className="w-4 h-4" />
@@ -92,7 +92,7 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
                         <div
-                          className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                          className="h-full bg-slate-700 rounded-full transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
