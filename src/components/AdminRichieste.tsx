@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type Request = {
+export type LeaveRequest = {
   id: string
   start_date: string
   end_date: string
@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: 'Rifiutata',
 }
 
-export default function AdminRichieste({ requests }: { requests: Request[] }) {
+export default function AdminRichieste({ requests }: { requests: LeaveRequest[] }) {
   const supabase = createClient()
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')

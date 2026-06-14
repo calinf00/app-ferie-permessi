@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import AdminRichieste from '@/components/AdminRichieste'
+import AdminRichieste, { type LeaveRequest } from '@/components/AdminRichieste'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -29,7 +29,7 @@ export default async function AdminPage() {
         <h1 className="text-lg font-bold text-gray-900">Gestione Richieste</h1>
       </nav>
       <main className="max-w-5xl mx-auto px-6 py-10">
-        <AdminRichieste requests={requests ?? []} />
+        <AdminRichieste requests={(requests as unknown as LeaveRequest[]) ?? []} />
       </main>
     </div>
   )
