@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { Pencil, Building, UsersGroup, CalendarDays, ChartBar } from '@/components/icons'
 import AdminEditUser, { type UserProfile } from '@/components/AdminEditUser'
+import AdminGestioneAssenze, { type FullLeaveRequest } from '@/components/AdminGestioneAssenze'
 import { calcLeaveStats } from '@/lib/leave-utils'
 
 export type UserWithRequests = UserProfile & {
   job_title:  string | null
   end_date:   string | null
   notes:      string | null
-  leave_requests: { start_date: string; end_date: string; status: string }[]
+  leave_requests: FullLeaveRequest[]
 }
 
 function initials(name: string | null, email: string) {
@@ -19,10 +20,18 @@ function initials(name: string | null, email: string) {
 
 export default function AdminCollaboratori({ users }: { users: UserWithRequests[] }) {
   const [editing, setEditing] = useState<UserProfile | null>(null)
+  const [managingAssenze, setManagingAssenze] = useState<UserWithRequests | null>(null)
 
   return (
     <>
       {editing && <AdminEditUser user={editing} onClose={() => setEditing(null)} />}
+      {managingAssenze && (
+        <AdminGestioneAssenze
+          user={managingAssenze}
+          initialRequests={managingAssenze.leave_requests}
+          onClose={() => setManagingAssenze(null)}
+        />
+      )}
 
       <div className="flex flex-col gap-3">
         {users.map(u => {
@@ -53,9 +62,16 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                         {u.is_active ? 'Attivo' : 'Inattivo'}
                       </span>
                       <button
+                        onClick={() => setManagingAssenze(u)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                        title="Gestisci assenze"
+                      >
+                        <CalendarDays className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => setEditing(u)}
                         className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                        title="Modifica"
+                        title="Modifica profilo"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>

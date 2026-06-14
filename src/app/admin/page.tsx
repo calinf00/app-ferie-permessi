@@ -62,9 +62,9 @@ export default async function AdminPage({
         const userIds = usersData.map((u: any) => u.id)
         const { data: leaveReqs } = await admin
           .from('leave_requests')
-          .select('user_id, start_date, end_date, status')
+          .select('id, user_id, start_date, end_date, hours, status, notes, admin_notes, admin_modified, leave_type_id, leave_types(name, color)')
           .in('user_id', userIds)
-          .eq('status', 'approved')
+          .order('start_date', { ascending: false })
         usersWithRequests = usersData.map((u: any) => ({
           ...u,
           leave_requests: (leaveReqs ?? []).filter((r: any) => r.user_id === u.id),
