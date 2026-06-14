@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminRichieste, { type LeaveRequest } from '@/components/AdminRichieste'
 import AdminCollaboratori, { type UserWithRequests } from '@/components/AdminCollaboratori'
-import AdminPresenze, { type Profile as PresenzeProfile, type LeaveEntry } from '@/components/AdminPresenze'
+import AdminPresenzeGrid, { type PresenzeProfile, type PresenzeRequest, type Holiday } from '@/components/AdminPresenzeGrid'
 import { DocumentText, UsersGroup, CalendarDays, ArrowLeft } from '@/components/icons'
 
 export default async function AdminPage({
@@ -31,7 +31,8 @@ export default async function AdminPage({
   let requests: LeaveRequest[] = []
   let usersWithRequests: UserWithRequests[] = []
   let presenzeProfiles: PresenzeProfile[] = []
-  let presenzeRequests: LeaveEntry[] = []
+  let presenzeRequests: PresenzeRequest[] = []
+  let holidays: Holiday[] = []
 
   try {
     const admin = createAdminClient()
@@ -72,25 +73,33 @@ export default async function AdminPage({
     }
 
     if (activeTab === 'presenze') {
-      const [{ data: profilesData, error: profilesError }, { data: leaveData, error: leaveError }] = await Promise.all([
+      const yr = new Date().getFullYear()
+      const [
+        { data: profilesData, error: profilesError },
+        { data: leaveData, error: leaveError },
+        { data: holidaysData, error: holidaysError },
+      ] = await Promise.all([
         admin
           .from('profiles')
-          .select('id, full_name, email, team, company, is_active')
+          .select('id, full_name, email, team, company')
           .eq('is_active', true)
           .order('full_name'),
         admin
           .from('leave_requests')
-          .select('id, start_date, end_date, user_id, profiles!user_id(full_name, email, team, company), leave_types(name, color)')
+          .select('id, start_date, end_date, hours, user_id, leave_types(name, color)')
           .eq('status', 'approved')
-          .gte('end_date', `${new Date().getFullYear()}-01-01`)
+          .gte('end_date', `${yr - 1}-01-01`)
+          .lte('start_date', `${yr + 2}-12-31`)
           .order('start_date'),
+        admin.from('holidays').select('id, date, name').order('date'),
       ])
-      if (profilesError || leaveError) {
-        console.error('[admin] presenze error:', profilesError ?? leaveError)
-        adminError = (profilesError ?? leaveError)!.message
+      if (profilesError || leaveError || holidaysError) {
+        console.error('[admin] presenze error:', profilesError ?? leaveError ?? holidaysError)
+        adminError = (profilesError ?? leaveError ?? holidaysError)!.message
       } else {
         presenzeProfiles = (profilesData as unknown as PresenzeProfile[]) ?? []
-        presenzeRequests = (leaveData as unknown as LeaveEntry[]) ?? []
+        presenzeRequests = (leaveData as unknown as PresenzeRequest[]) ?? []
+        holidays = (holidaysData as unknown as Holiday[]) ?? []
       }
     }
   } catch (e: any) {
@@ -165,7 +174,7 @@ export default async function AdminPage({
         )}
 
         {activeTab === 'presenze' && (
-          <AdminPresenze profiles={presenzeProfiles} requests={presenzeRequests} />
+          <AdminPresenzeGrid profiles={presenzeProfiles} requests={presenzeRequests} holidays={holidays} />
         )}
       </main>
     </div>
