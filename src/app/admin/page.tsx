@@ -108,8 +108,8 @@ export default async function AdminPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-6 h-14 flex items-center gap-3 sticky top-0 z-10">
+    <div className="min-h-dvh bg-gray-50">
+      <nav className="bg-white border-b border-gray-100 px-4 sm:px-6 h-14 flex items-center gap-3 sticky top-0 z-10">
         <a
           href="/dashboard"
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors"
@@ -121,7 +121,7 @@ export default async function AdminPage({
         <h1 className="text-sm font-semibold text-gray-900">Area Admin</h1>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {adminError && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
             Errore di configurazione: {adminError}
@@ -129,10 +129,10 @@ export default async function AdminPage({
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-8">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit mb-8 overflow-x-auto">
           <a
             href="/admin?tab=richieste"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === 'richieste'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -143,7 +143,7 @@ export default async function AdminPage({
           </a>
           <a
             href="/admin?tab=collaboratori"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === 'collaboratori'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -154,7 +154,7 @@ export default async function AdminPage({
           </a>
           <a
             href="/admin?tab=presenze"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === 'presenze'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'

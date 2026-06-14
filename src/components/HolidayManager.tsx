@@ -87,12 +87,12 @@ export default function HolidayManager({
           {/* Add new holiday */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Aggiungi festivo</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 type="date"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
-                className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-slate-500 bg-white"
+                className="flex-1 min-w-[8rem] border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-slate-500 bg-white"
               />
               <input
                 type="text"
@@ -100,7 +100,7 @@ export default function HolidayManager({
                 onChange={e => setNewName(e.target.value)}
                 placeholder="Nome festivo"
                 onKeyDown={e => e.key === 'Enter' && addHoliday()}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-slate-500 bg-white"
+                className="flex-1 min-w-[8rem] border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-slate-500 bg-white"
               />
               <button
                 onClick={addHoliday}

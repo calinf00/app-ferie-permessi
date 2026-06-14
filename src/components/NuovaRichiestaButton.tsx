@@ -53,7 +53,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 bg-slate-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors flex items-center gap-1.5"
+        className="shrink-0 w-full sm:w-auto justify-center bg-slate-900 text-white rounded-xl px-4 py-2.5 sm:py-2 text-sm font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors flex items-center gap-1.5"
       >
         <Plus className="w-4 h-4" />
         <span>Nuova comunicazione</span>
@@ -64,8 +64,8 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
           className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4"
           onClick={e => e.target === e.currentTarget && handleClose()}
         >
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
               <h3 className="font-semibold text-gray-900">Nuova comunicazione</h3>
               <button
                 onClick={handleClose}
@@ -75,7 +75,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5 flex flex-col gap-4">
               <div>
                 <label className={labelCls}>Tipo di assenza</label>
                 <select

@@ -165,8 +165,8 @@ export default function AdminPresenze({ profiles, requests }: { profiles: Profil
       ) : (
         <div className="flex flex-col gap-3">
           {rows.map(({ profile, leave, onLeave }) => (
-            <div key={profile.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className="flex items-start justify-between gap-4">
+            <div key={profile.id} className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                 <div className="flex items-start gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-sm font-semibold shrink-0 select-none">
                     {initials(profile.full_name, profile.email)}
@@ -190,9 +190,9 @@ export default function AdminPresenze({ profiles, requests }: { profiles: Profil
                 </div>
 
                 {/* Leave entries */}
-                <div className="shrink-0 text-right">
+                <div className="shrink-0 text-left sm:text-right pl-14 sm:pl-0">
                   {onLeave ? (
-                    <div className="flex flex-col gap-2 items-end">
+                    <div className="flex flex-col gap-2 items-start sm:items-end">
                       {leave.map(entry => {
                         const days = daysDiff(entry.start_date, entry.end_date)
                         return (

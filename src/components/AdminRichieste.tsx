@@ -108,7 +108,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
             const name = req.profiles?.full_name || req.profiles?.email || 'Utente'
             const initials = name.slice(0, 2).toUpperCase()
             return (
-              <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between hover:border-gray-200 transition-colors">
+              <div key={req.id} className="bg-white rounded-2xl border border-gray-100 px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-200 transition-colors">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {initials}
@@ -133,7 +133,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 ml-4">
+                <div className="flex items-center flex-wrap gap-2 shrink-0 ml-0 sm:ml-4 pl-[52px] sm:pl-0">
                   {req.status === 'pending' ? (
                     <>
                       <button

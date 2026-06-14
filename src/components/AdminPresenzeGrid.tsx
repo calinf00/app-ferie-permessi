@@ -285,14 +285,14 @@ export default function AdminPresenzeGrid({
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 w-full sm:w-auto">
           <button
             onClick={() => setAnchor(a => navigatePeriod(a, periodType, -1))}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-semibold text-gray-900 min-w-52 text-center select-none">
+          <span className="text-sm font-semibold text-gray-900 flex-1 sm:flex-none sm:min-w-52 text-center select-none">
             {formatPeriodLabel(periodStart, periodEnd, periodType)}
           </span>
           <button

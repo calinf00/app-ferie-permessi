@@ -49,12 +49,12 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
 
                 {/* Main info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-gray-900 leading-tight">{u.full_name ?? u.email}</p>
-                      {u.full_name && <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 leading-tight break-words">{u.full_name ?? u.email}</p>
+                      {u.full_name && <p className="text-xs text-gray-400 mt-0.5 break-words">{u.email}</p>}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center flex-wrap gap-2 shrink-0">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-slate-100 text-slate-700'}`}>
                         {u.role === 'admin' ? 'Admin' : 'Collaboratore'}
                       </span>

@@ -30,7 +30,7 @@ export default function LoginPage() {
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://work-apps-portal.vercel.app'
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-dvh flex bg-gray-50">
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-slate-800 to-slate-900 items-center justify-center p-12">
         <div className="max-w-sm text-white">
           <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8">

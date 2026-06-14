@@ -117,15 +117,15 @@ export default async function DashboardPage({
   const initials = (profile?.full_name ?? user.email ?? '').slice(0, 2).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-6 h-14 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
+    <div className="min-h-dvh bg-gray-50">
+      <nav className="bg-white border-b border-gray-100 px-4 sm:px-6 h-14 flex items-center justify-between gap-2 sticky top-0 z-10">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center shrink-0">
             <SunHorizon className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold text-gray-900 text-sm">Comunicazioni Assenze</span>
+          <span className="font-semibold text-gray-900 text-sm truncate">Comunicazioni Assenze</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {profile?.role === 'admin' && (
             <a href="/admin" className="text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors">
               Admin
@@ -134,9 +134,10 @@ export default async function DashboardPage({
           <a
             href={process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://work-apps-portal.vercel.app'}
             className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1"
+            title="Torna al portale"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Portale
+            <span className="hidden sm:inline">Portale</span>
           </a>
           <div className="w-7 h-7 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center text-white text-xs font-semibold select-none">
             {initials}
@@ -145,7 +146,7 @@ export default async function DashboardPage({
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-8">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Greeting */}
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900">
@@ -254,28 +255,28 @@ export default async function DashboardPage({
         </div>
 
         {/* Tab navigation */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit mb-6">
           <a
             href="/dashboard"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'richieste'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <DocumentText className="w-4 h-4" />
-            Le mie comunicazioni
+            <DocumentText className="w-4 h-4 shrink-0" />
+            <span className="truncate">Le mie comunicazioni</span>
           </a>
           <a
             href="/dashboard?tab=team"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'team'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <UsersGroup className="w-4 h-4" />
-            Il mio team
+            <UsersGroup className="w-4 h-4 shrink-0" />
+            <span className="truncate">Il mio team</span>
           </a>
         </div>
 
@@ -294,7 +295,7 @@ export default async function DashboardPage({
         ) : (
           <>
         {/* Requests header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h3 className="font-semibold text-gray-900 text-sm">Le mie comunicazioni</h3>
           <NuovaRichiestaButton leaveTypes={leaveTypes ?? []} userId={user.id} />
         </div>
@@ -319,7 +320,7 @@ export default async function DashboardPage({
                   key={req.id}
                   className={`bg-white rounded-2xl border px-5 py-4 hover:border-gray-200 transition-colors ${req.admin_modified ? 'border-amber-100' : 'border-gray-100'}`}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                     <div className="flex items-start gap-4 min-w-0">
                       <div
                         className="w-1 rounded-full shrink-0 mt-0.5"
@@ -352,7 +353,7 @@ export default async function DashboardPage({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center flex-wrap gap-2 shrink-0 pl-5 sm:pl-0">
                       <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
                         {STATUS_LABEL[req.status]}
                       </span>
