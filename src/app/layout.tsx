@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Giorni di Riposo",
-  description: "Gestione giorni di riposo e permessi per collaboratori",
+  title: "Comunicazioni Assenze",
+  description: "Gestione comunicazioni ferie e permessi per collaboratori",
 };
 
 export default function RootLayout({

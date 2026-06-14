@@ -10,8 +10,8 @@ import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
-  approved: 'Approvata',
-  rejected: 'Rifiutata',
+  approved: 'Confermata',
+  rejected: 'Non confermata',
   cancellation_requested: 'Annullamento richiesto',
 }
 
@@ -113,7 +113,7 @@ export default async function DashboardPage({
           <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
             <SunHorizon className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold text-gray-900 text-sm">Giorni di Riposo</span>
+          <span className="font-semibold text-gray-900 text-sm">Comunicazioni Assenze</span>
         </div>
         <div className="flex items-center gap-2">
           {profile?.role === 'admin' && (
@@ -141,7 +141,7 @@ export default async function DashboardPage({
           <h2 className="text-xl font-bold text-gray-900">
             {firstName ? `Ciao, ${firstName}` : 'La mia area'}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">Storico delle tue richieste di assenza</p>
+          <p className="text-sm text-gray-500 mt-0.5">Storico delle tue comunicazioni di assenza</p>
         </div>
 
         {/* Profile + leave stats card */}
@@ -232,7 +232,7 @@ export default async function DashboardPage({
             }`}
           >
             <DocumentText className="w-4 h-4" />
-            Le mie richieste
+            Le mie comunicazioni
           </a>
           <a
             href="/dashboard?tab=team"
@@ -263,7 +263,7 @@ export default async function DashboardPage({
           <>
         {/* Requests header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 text-sm">Le mie richieste</h3>
+          <h3 className="font-semibold text-gray-900 text-sm">Le mie comunicazioni</h3>
           <NuovaRichiestaButton leaveTypes={leaveTypes ?? []} userId={user.id} />
         </div>
 
@@ -272,8 +272,8 @@ export default async function DashboardPage({
             <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
               <DocumentText className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-gray-700 font-medium">Nessuna richiesta ancora</p>
-            <p className="text-sm text-gray-400 mt-1">Clicca su &quot;Nuova richiesta&quot; per iniziare</p>
+            <p className="text-gray-700 font-medium">Nessuna comunicazione ancora</p>
+            <p className="text-sm text-gray-400 mt-1">Clicca su &quot;Nuova comunicazione&quot; per iniziare</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

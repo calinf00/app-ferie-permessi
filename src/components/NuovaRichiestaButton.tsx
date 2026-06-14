@@ -36,7 +36,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
         className="shrink-0 bg-slate-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors flex items-center gap-1.5"
       >
         <Plus className="w-4 h-4" />
-        <span>Nuova richiesta</span>
+        <span>Nuova comunicazione</span>
       </button>
 
       {open && (
@@ -46,7 +46,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
         >
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900">Nuova richiesta</h3>
+              <h3 className="font-semibold text-gray-900">Nuova comunicazione</h3>
               <button
                 onClick={() => setOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
@@ -117,7 +117,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                   disabled={loading}
                   className="flex-1 bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Invio...' : 'Invia richiesta'}
+                  {loading ? 'Invio...' : 'Invia comunicazione'}
                 </button>
               </div>
             </form>

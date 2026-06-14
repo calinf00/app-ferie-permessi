@@ -25,8 +25,8 @@ const STATUS_STYLE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
-  approved: 'Approvata',
-  rejected: 'Rifiutata',
+  approved: 'Confermata',
+  rejected: 'Non confermata',
   cancellation_requested: 'Annullamento richiesto',
 }
 
@@ -77,7 +77,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                 : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            {f === 'pending' ? `Da approvare ${pendingCount > 0 ? `(${pendingCount})` : ''}` : 'Tutte'}
+            {f === 'pending' ? `Da confermare ${pendingCount > 0 ? `(${pendingCount})` : ''}` : 'Tutte'}
           </button>
         ))}
       </div>
@@ -87,7 +87,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
           <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
             <CheckMark className="w-7 h-7 text-emerald-500" />
           </div>
-          <p className="text-gray-700 font-medium">Nessuna richiesta {filter === 'pending' ? 'in attesa' : ''}</p>
+          <p className="text-gray-700 font-medium">Nessuna comunicazione {filter === 'pending' ? 'in attesa' : ''}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -126,14 +126,14 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                     <>
                       <button
                         onClick={() => updateStatus(req.id, 'approved')}
-                        title="Approva"
+                        title="Conferma"
                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
                       >
                         <CheckMark className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => updateStatus(req.id, 'rejected')}
-                        title="Rifiuta"
+                        title="Non confermare"
                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                       >
                         <XMark className="w-4 h-4" />

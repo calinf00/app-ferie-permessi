@@ -130,7 +130,7 @@ export default async function AdminPage({
             }`}
           >
             <DocumentText className="w-4 h-4" />
-            Richieste
+            Comunicazioni
           </a>
           <a
             href="/admin?tab=collaboratori"

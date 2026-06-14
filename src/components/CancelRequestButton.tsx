@@ -18,7 +18,7 @@ export default function CancelRequestButton({
   const [loading, setLoading] = useState(false)
 
   async function cancelPending() {
-    if (!confirm('Vuoi annullare questa richiesta?')) return
+    if (!confirm('Vuoi annullare questa comunicazione?')) return
     setLoading(true)
     await supabase
       .from('leave_requests')
@@ -30,7 +30,7 @@ export default function CancelRequestButton({
   }
 
   async function requestCancellation() {
-    if (!confirm("Vuoi richiedere l'annullamento di questa richiesta approvata?")) return
+    if (!confirm("Vuoi richiedere l'annullamento di questa comunicazione confermata?")) return
     setLoading(true)
     await supabase
       .from('leave_requests')

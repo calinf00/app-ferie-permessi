@@ -36,9 +36,9 @@ export default function LoginPage() {
           <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8">
             <SunHorizon className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold mb-4 leading-tight">Giorni di Riposo</h2>
+          <h2 className="text-3xl font-bold mb-4 leading-tight">Comunicazioni Assenze</h2>
           <p className="text-slate-300 text-base leading-relaxed">
-            Invia richieste, monitora lo stato delle tue assenze e tieni traccia delle approvazioni.
+            Comunica le tue assenze, monitora lo stato e tieni traccia delle conferme.
           </p>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function LoginPage() {
               <SunHorizon className="w-5 h-5 text-slate-700" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Accedi</h1>
-            <p className="text-gray-500 mt-1 text-sm">Giorni di Riposo — inserisci le tue credenziali</p>
+            <p className="text-gray-500 mt-1 text-sm">Comunicazioni Assenze — inserisci le tue credenziali</p>
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
