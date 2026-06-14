@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import AdminRichieste, { type LeaveRequest } from '@/components/AdminRichieste'
 import AdminCollaboratori, { type UserWithRequests } from '@/components/AdminCollaboratori'
 import AdminPresenzeGrid, { type PresenzeProfile, type PresenzeRequest, type Holiday } from '@/components/AdminPresenzeGrid'
+import AdminBulkAssignButton from '@/components/AdminBulkAssignButton'
 import { DocumentText, UsersGroup, CalendarDays, ArrowLeft } from '@/components/icons'
 
 export default async function AdminPage({
@@ -128,8 +129,9 @@ export default async function AdminPage({
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit mb-8 overflow-x-auto">
+        {/* Tabs + bulk action */}
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
           <a
             href="/admin?tab=richieste"
             className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
@@ -163,6 +165,8 @@ export default async function AdminPage({
             <CalendarDays className="w-4 h-4" />
             Presenze
           </a>
+        </div>
+        <AdminBulkAssignButton />
         </div>
 
         {activeTab === 'richieste' && (
