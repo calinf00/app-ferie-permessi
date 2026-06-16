@@ -6,6 +6,8 @@ import NuovaRichiestaButton from '@/components/NuovaRichiestaButton'
 import TeamView, { type TeamRequest } from '@/components/TeamView'
 import { SunHorizon, Building, UsersGroup, CalendarDays, ChartBar, DocumentText, ArrowLeft } from '@/components/icons'
 import CancelRequestButton from '@/components/CancelRequestButton'
+import ModificaComunicazioneButton from '@/components/ModificaComunicazioneButton'
+import DashboardView from '@/components/DashboardView'
 import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -72,7 +74,7 @@ export default async function DashboardPage({
   const [{ data: requests }, { data: leaveTypes }] = await Promise.all([
     supabase
       .from('leave_requests')
-      .select('id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, leave_types(name, color)')
+      .select('id, leave_type_id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, leave_types(name, color)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -309,6 +311,7 @@ export default async function DashboardPage({
             <p className="text-sm text-gray-400 mt-1">Clicca su &quot;Nuova comunicazione&quot; per iniziare</p>
           </div>
         ) : (
+          <DashboardView requests={(requests ?? []) as any}>
           <div className="flex flex-col gap-3">
             {requests.map((req: any) => {
               const days = daysDiff(req.start_date, req.end_date)
@@ -357,6 +360,20 @@ export default async function DashboardPage({
                       <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
                         {STATUS_LABEL[req.status]}
                       </span>
+                      {req.status === 'pending' && (
+                        <ModificaComunicazioneButton
+                          leaveTypes={leaveTypes ?? []}
+                          comunicazione={{
+                            id: req.id,
+                            leave_type_id: req.leave_type_id,
+                            start_date: req.start_date,
+                            end_date: req.end_date,
+                            hours: req.hours ?? null,
+                            notes: req.notes,
+                          }}
+                          userId={user.id}
+                        />
+                      )}
                       {(req.status === 'pending' || req.status === 'approved') && (
                         <CancelRequestButton requestId={req.id} userId={user.id} status={req.status} />
                       )}
@@ -366,6 +383,7 @@ export default async function DashboardPage({
               )
             })}
           </div>
+          </DashboardView>
         )}
           </>
         )}
