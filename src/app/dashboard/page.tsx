@@ -4,11 +4,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import LogoutButton from '@/components/LogoutButton'
 import NuovaRichiestaButton from '@/components/NuovaRichiestaButton'
 import TeamView, { type TeamRequest } from '@/components/TeamView'
-import { SunHorizon, Building, UsersGroup, CalendarDays, ChartBar, DocumentText, ArrowLeft } from '@/components/icons'
+import { SunHorizon, Building, UsersGroup, CalendarDays, DocumentText, ArrowLeft } from '@/components/icons'
 import CancelRequestButton from '@/components/CancelRequestButton'
 import ModificaComunicazioneButton from '@/components/ModificaComunicazioneButton'
 import DashboardView from '@/components/DashboardView'
-import { calcLeaveStats, formatDate, daysDiff } from '@/lib/leave-utils'
+import { calcAnnualEntitlement, calcUsedDaysInCategory, fmtDays, formatDate, daysDiff, type LeaveRequestForStats } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
@@ -39,7 +39,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, company, team, hire_date, annual_leave_days')
+    .select('full_name, role, company, team, hire_date, annual_riposi_days, annual_permessi_days')
     .eq('id', user.id)
     .single()
 
@@ -76,29 +76,23 @@ export default async function DashboardPage({
       .from('leave_requests')
       .select('id, leave_type_id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, leave_types(name, color)')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20),
+      .order('created_at', { ascending: false }),
     supabase.from('leave_types').select('id, name, color'),
   ])
 
-  const approvedRequests = (requests ?? [])
-    .filter((r: any) => r.status === 'approved')
-    .map((r: any) => ({ start_date: r.start_date, end_date: r.end_date }))
+  const currentYear = new Date().getFullYear()
+  const statsRequests = (requests ?? []) as unknown as LeaveRequestForStats[]
 
-  const leaveStats = calcLeaveStats(
-    profile?.hire_date ?? null,
-    profile?.annual_leave_days ?? 20,
-    approvedRequests
-  )
+  const riposiAnnuali    = profile?.annual_riposi_days   ?? 18
+  const permssAnnuali    = profile?.annual_permessi_days ?? 5
 
-  // Giorni totali comunicati (non rifiutati, solo giornate intere) per la vista utente
-  const communicatedDays = (requests ?? [])
-    .filter((r: any) => r.status !== 'rejected')
-    .reduce((sum: number, r: any) => {
-      if (r.hours) return sum
-      return sum + daysDiff(r.start_date, r.end_date)
-    }, 0)
-  const totalDays = profile?.annual_leave_days ?? 20
+  const riposiTotale     = calcAnnualEntitlement(riposiAnnuali, profile?.hire_date ?? null, currentYear)
+  const riposiUsati      = calcUsedDaysInCategory('riposi',  statsRequests, currentYear)
+  const riposiRimanenti  = Math.max(0, Math.round((riposiTotale - riposiUsati) * 10) / 10)
+
+  const permssTotale     = calcAnnualEntitlement(permssAnnuali, profile?.hire_date ?? null, currentYear)
+  const permssUsati      = calcUsedDaysInCategory('permessi', statsRequests, currentYear)
+  const permssRimanenti  = Math.max(0, Math.round((permssTotale - permssUsati) * 10) / 10)
 
   let teamRequests: TeamRequest[] = []
   if (activeTab === 'team' && profile?.team) {
@@ -189,71 +183,31 @@ export default async function DashboardPage({
             )}
           </div>
 
-          {/* Stats utente: totale / utilizzati / rimanenti */}
-          {!isAdmin && (
-            <div className="bg-gray-50 rounded-xl px-4 py-4">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-gray-900">{totalDays}</p>
-                  <p className="text-xs text-gray-400">Totale anno</p>
-                </div>
-                <div className="text-center border-x border-gray-200">
-                  <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
-                  <p className="text-xs text-gray-400">Utilizzati</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-slate-700">{Math.max(0, totalDays - leaveStats.usedDays)}</p>
-                  <p className="text-xs text-gray-400">Rimanenti</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Leave stats — solo admin */}
-          {isAdmin && (
-            <div className="bg-gray-50 rounded-xl px-4 py-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                  <ChartBar className="w-3.5 h-3.5" />
-                  Giorni di riposo {new Date().getFullYear()}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {leaveStats.annualDays} gg/anno
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="h-full bg-slate-700 rounded-full transition-all duration-700"
-                    style={{ width: leaveStats.annualDays > 0 ? `${Math.min(100, Math.round((leaveStats.accrued / leaveStats.annualDays) * 100))}%` : '0%' }}
-                  />
-                </div>
-                <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                  {leaveStats.remaining} <span className="text-xs font-normal text-gray-400">rimanenti</span>
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-gray-900">{leaveStats.accrued}</p>
-                  <p className="text-xs text-gray-400">Maturati</p>
-                </div>
-                <div className="text-center border-x border-gray-200">
-                  <p className="text-lg font-bold text-gray-900">{leaveStats.usedDays}</p>
-                  <p className="text-xs text-gray-400">Usati</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-slate-700">{leaveStats.remaining}</p>
-                  <p className="text-xs text-gray-400">Rimanenti</p>
-                </div>
-              </div>
-
-              <p className="text-xs text-center text-gray-400 mt-3">
-                Maturazione: {leaveStats.monthlyRate} gg/mese · {leaveStats.weeklyRate} gg/settimana
+          {/* Bilancio Riposi + Permessi — anno corrente */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-50 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Riposi {currentYear}
               </p>
+              <p className="text-2xl font-bold text-slate-700">{fmtDays(riposiRimanenti)}<span className="text-sm font-normal text-gray-400 ml-1">gg</span></p>
+              <p className="text-xs text-gray-400 mt-0.5">rimanenti</p>
+              <div className="flex gap-3 mt-2 pt-2 border-t border-slate-100">
+                <span className="text-xs text-gray-400">Totale: <span className="font-medium text-gray-600">{fmtDays(riposiTotale)}</span></span>
+                <span className="text-xs text-gray-400">Usati: <span className="font-medium text-gray-600">{fmtDays(riposiUsati)}</span></span>
+              </div>
             </div>
-          )}
+            <div className="bg-blue-50 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Permessi {currentYear}
+              </p>
+              <p className="text-2xl font-bold text-blue-700">{fmtDays(permssRimanenti)}<span className="text-sm font-normal text-gray-400 ml-1">gg</span></p>
+              <p className="text-xs text-gray-400 mt-0.5">rimanenti</p>
+              <div className="flex gap-3 mt-2 pt-2 border-t border-blue-100">
+                <span className="text-xs text-gray-400">Totale: <span className="font-medium text-gray-600">{fmtDays(permssTotale)}</span></span>
+                <span className="text-xs text-gray-400">Usati: <span className="font-medium text-gray-600">{fmtDays(permssUsati)}</span></span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Tab navigation */}

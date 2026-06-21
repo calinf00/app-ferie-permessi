@@ -1,42 +1,125 @@
-export type LeaveStats = {
-  accrued: number
-  usedDays: number
-  remaining: number
-  monthlyRate: number
-  weeklyRate: number
-  annualDays: number
+export type LeaveRequestForStats = {
+  start_date: string
+  end_date: string
+  hours: number | null
+  status: string
+  leave_types: { name: string; color: string } | null
 }
 
-export function calcLeaveStats(
-  hireDate: string | null,
-  annualDays: number = 20,
-  approvedRequests: { start_date: string; end_date: string }[]
-): LeaveStats {
+export function categorizeLeaveType(name: string): 'riposi' | 'permessi' | 'altro' {
+  const n = name.toLowerCase()
+  if (n.includes('riposo') || n.includes('ferie') || n.includes('riposi')) return 'riposi'
+  if (n.includes('permesso') || n.includes('permessi')) return 'permessi'
+  return 'altro'
+}
+
+// Accrued to today — used in admin view to show progress during the year
+export function calcAccruedMonthly(annualDays: number, hireDate: string | null, year: number): number {
   const now = new Date()
   const currentYear = now.getFullYear()
-  const yearStart = new Date(currentYear, 0, 1)
-  const hire = hireDate ? new Date(hireDate) : yearStart
-  const accrualStart = hire > yearStart ? hire : yearStart
 
-  const msElapsed = Math.max(0, now.getTime() - accrualStart.getTime())
-  const daysElapsed = msElapsed / (1000 * 60 * 60 * 24)
-  const yearFraction = Math.min(daysElapsed / 365.25, 1)
-  const accrued = Math.round(yearFraction * annualDays * 2) / 2
+  if (year > currentYear) return 0
 
-  const usedDays = approvedRequests.reduce((sum, r) => {
+  let startMonth = 0
+
+  if (hireDate) {
+    const hire = new Date(hireDate)
+    const hireYear = hire.getFullYear()
+    if (hireYear > year) return 0
+    if (hireYear === year) startMonth = hire.getMonth()
+  }
+
+  const endMonth = year < currentYear ? 11 : now.getMonth()
+  const monthsElapsed = endMonth - startMonth + 1
+  return Math.round((monthsElapsed / 12) * annualDays * 10) / 10
+}
+
+// Full-year entitlement — used in user view (hire month → December, not today)
+export function calcAnnualEntitlement(annualDays: number, hireDate: string | null, year: number): number {
+  const currentYear = new Date().getFullYear()
+
+  if (year > currentYear) return 0
+
+  if (hireDate) {
+    const hire = new Date(hireDate)
+    const hireYear = hire.getFullYear()
+    if (hireYear > year) return 0
+    if (hireYear === year) {
+      const monthsEntitled = 12 - hire.getMonth()
+      return Math.round((monthsEntitled / 12) * annualDays * 10) / 10
+    }
+  }
+
+  return annualDays
+}
+
+export function calcUsedDaysInCategory(
+  category: 'riposi' | 'permessi',
+  requests: LeaveRequestForStats[],
+  year: number
+): number {
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+
+  return requests.reduce((sum, r) => {
+    if (r.status !== 'approved') return sum
+    const typeName = r.leave_types?.name ?? ''
+    if (categorizeLeaveType(typeName) !== category) return sum
+
     const start = new Date(r.start_date)
     const end = new Date(r.end_date)
-    if (start.getFullYear() > currentYear || end.getFullYear() < currentYear) return sum
-    const clampedStart = start.getFullYear() < currentYear ? yearStart : start
-    const clampedEnd = end.getFullYear() > currentYear ? new Date(currentYear, 11, 31) : end
+    if (start > yearEnd || end < yearStart) return sum
+
+    if (r.hours !== null) {
+      return sum + r.hours / 8
+    }
+
+    const clampedStart = start < yearStart ? yearStart : start
+    const clampedEnd = end > yearEnd ? yearEnd : end
     return sum + Math.round((clampedEnd.getTime() - clampedStart.getTime()) / 86400000) + 1
   }, 0)
+}
 
-  const remaining = Math.max(0, Math.round((accrued - usedDays) * 2) / 2)
-  const monthlyRate = Math.round((annualDays / 12) * 100) / 100
-  const weeklyRate = Math.round((annualDays / 52) * 100) / 100
+export function calcAltroByType(
+  requests: LeaveRequestForStats[],
+  year: number
+): Array<{ name: string; color: string; days: number }> {
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+  const map = new Map<string, { color: string; days: number }>()
 
-  return { accrued, usedDays, remaining, monthlyRate, weeklyRate, annualDays }
+  for (const r of requests) {
+    if (r.status !== 'approved') continue
+    const typeName = r.leave_types?.name ?? ''
+    if (categorizeLeaveType(typeName) !== 'altro') continue
+
+    const start = new Date(r.start_date)
+    const end = new Date(r.end_date)
+    if (start > yearEnd || end < yearStart) continue
+
+    let days: number
+    if (r.hours !== null) {
+      days = r.hours / 8
+    } else {
+      const clampedStart = start < yearStart ? yearStart : start
+      const clampedEnd = end > yearEnd ? yearEnd : end
+      days = Math.round((clampedEnd.getTime() - clampedStart.getTime()) / 86400000) + 1
+    }
+
+    const existing = map.get(typeName)
+    if (existing) {
+      existing.days += days
+    } else {
+      map.set(typeName, { color: r.leave_types?.color ?? '#94a3b8', days })
+    }
+  }
+
+  return Array.from(map.entries()).map(([name, v]) => ({ name, ...v }))
+}
+
+export function fmtDays(n: number): string {
+  const rounded = Math.round(n * 10) / 10
+  return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1)
 }
 
 export function formatDate(d: string) {

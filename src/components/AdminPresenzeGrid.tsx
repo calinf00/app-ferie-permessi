@@ -19,6 +19,7 @@ export type PresenzeRequest = {
   end_date: string
   hours: number | null
   user_id: string
+  status: string
   leave_types: { name: string; color: string } | null
 }
 
@@ -29,6 +30,7 @@ export type Holiday = {
 }
 
 type PeriodType = 'week' | 'month' | 'quarter' | 'year'
+type SortBy = 'name_asc' | 'name_desc' | 'team' | 'company'
 
 // --- Date utils ---
 const IT_DAY_LETTERS = ['D', 'L', 'M', 'M', 'G', 'V', 'S']
@@ -161,6 +163,7 @@ export default function AdminPresenzeGrid({
   const [filterTeam, setFilterTeam] = useState('all')
   const [filterCompany, setFilterCompany] = useState('all')
   const [showOnlyAbsent, setShowOnlyAbsent] = useState(false)
+  const [sortBy, setSortBy] = useState<SortBy>('name_asc')
   const [showHolidayManager, setShowHolidayManager] = useState(false)
   const [holidays, setHolidays] = useState(initialHolidays)
 
@@ -235,7 +238,7 @@ export default function AdminPresenzeGrid({
   const periodEndStr = toDateStr(periodEnd)
 
   const filteredProfiles = useMemo(() => {
-    return profiles.filter(p => {
+    const filtered = profiles.filter(p => {
       if (filterTeam !== 'all' && p.team !== filterTeam) return false
       if (filterCompany !== 'all' && p.company !== filterCompany) return false
       if (showOnlyAbsent) {
@@ -246,7 +249,22 @@ export default function AdminPresenzeGrid({
       }
       return true
     })
-  }, [profiles, filterTeam, filterCompany, showOnlyAbsent, absenceMap, periodStartStr, periodEndStr])
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name_asc':
+          return (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, 'it')
+        case 'name_desc':
+          return (b.full_name ?? b.email).localeCompare(a.full_name ?? a.email, 'it')
+        case 'team':
+          return (a.team ?? '').localeCompare(b.team ?? '', 'it') ||
+                 (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, 'it')
+        case 'company':
+          return (a.company ?? '').localeCompare(b.company ?? '', 'it') ||
+                 (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, 'it')
+      }
+    })
+  }, [profiles, filterTeam, filterCompany, showOnlyAbsent, absenceMap, periodStartStr, periodEndStr, sortBy])
 
   // Legend: leave types visible in current period
   const legendItems = useMemo(() => {
@@ -330,6 +348,17 @@ export default function AdminPresenzeGrid({
             {companies.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         )}
+
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as SortBy)}
+          className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-slate-400"
+        >
+          <option value="name_asc">A → Z Nome</option>
+          <option value="name_desc">Z → A Nome</option>
+          <option value="team">Per team</option>
+          <option value="company">Per azienda</option>
+        </select>
 
         <button
           onClick={() => setShowOnlyAbsent(v => !v)}
@@ -515,7 +544,19 @@ export default function AdminPresenzeGrid({
                               <div className="absolute inset-x-0 top-0 h-0.5 bg-blue-400 z-10" />
                             )}
                             {/* Absence fill */}
-                            {absence && (
+                            {absence && absence.status === 'pending' && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div
+                                  className="w-4 h-4 rounded-full"
+                                  style={{
+                                    backgroundColor: absence.leave_types?.color ?? '#94a3b8',
+                                    opacity: 0.4,
+                                    border: `2px solid ${absence.leave_types?.color ?? '#94a3b8'}`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {absence && absence.status === 'approved' && (
                               <div
                                 className="absolute left-px right-px rounded-sm"
                                 style={{
@@ -565,6 +606,15 @@ export default function AdminPresenzeGrid({
                 style={{ background: 'linear-gradient(to top, #94a3b8 50%, #e2e8f0 50%)' }}
               />
               Permesso ore (metà cella)
+            </span>
+          )}
+          {periodType !== 'year' && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span
+                className="w-3 h-3 rounded-full inline-block"
+                style={{ backgroundColor: '#94a3b8', opacity: 0.4, border: '2px solid #94a3b8' }}
+              />
+              In attesa
             </span>
           )}
         </div>

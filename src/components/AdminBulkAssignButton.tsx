@@ -14,7 +14,7 @@ export default function AdminBulkAssignButton() {
         className="flex items-center gap-1.5 text-sm font-medium bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 active:bg-slate-950 transition-colors shrink-0"
       >
         <Plus className="w-4 h-4" />
-        Assegna assenze
+        Gestisci assenze
       </button>
 
       {open && <AdminBulkAssign onClose={() => setOpen(false)} />}

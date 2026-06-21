@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, XMark } from '@/components/icons'
 
 type LeaveType = { id: string; name: string; color: string }
+
+type Conflict = { id: string; start_date: string; end_date: string; hours: number | null; leave_types: { name: string; color: string } | null }
 
 export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveTypes: LeaveType[]; userId: string }) {
   const [open, setOpen] = useState(false)
@@ -18,8 +20,33 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
     notes: '',
   })
   const [loading, setLoading] = useState(false)
+  const [conflicts, setConflicts] = useState<Conflict[]>([])
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    let cancelled = false
+    async function check() {
+      const effectiveStart = form.start_date
+      const effectiveEnd = isPartial ? form.start_date : form.end_date
+      if (!effectiveStart || !effectiveEnd) {
+        if (!cancelled) setConflicts([])
+        return
+      }
+      const { data } = await supabase
+        .from('leave_requests')
+        .select('id, start_date, end_date, hours, leave_types(name, color)')
+        .eq('user_id', userId)
+        .eq('status', 'approved')
+        .lte('start_date', effectiveEnd)
+        .gte('end_date', effectiveStart)
+      if (!cancelled) setConflicts((data as Conflict[] | null) ?? [])
+    }
+    check()
+    return () => {
+      cancelled = true
+    }
+  }, [form.start_date, form.end_date, isPartial, userId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -155,6 +182,32 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                       className={inputCls}
                     />
                   </div>
+                </div>
+              )}
+
+              {conflicts.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-col gap-1.5">
+                  <p className="text-xs font-semibold text-amber-700">
+                    Attenzione: hai già {conflicts.length === 1 ? 'una comunicazione approvata' : 'comunicazioni approvate'} in questo periodo
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {conflicts.map(c => (
+                      <li key={c.id} className="flex items-center gap-2 text-xs text-amber-600">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: c.leave_types?.color ?? '#f59e0b' }}
+                        />
+                        <span>
+                          {c.leave_types?.name ?? 'Assenza'} · {' '}
+                          {c.hours
+                            ? `${new Date(c.start_date + 'T00:00:00').toLocaleDateString('it-IT')} (${c.hours}h)`
+                            : `${new Date(c.start_date + 'T00:00:00').toLocaleDateString('it-IT')}${c.start_date !== c.end_date ? ` → ${new Date(c.end_date + 'T00:00:00').toLocaleDateString('it-IT')}` : ''}`
+                          }
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-amber-500 mt-0.5">Puoi comunque inviare la comunicazione.</p>
                 </div>
               )}
 

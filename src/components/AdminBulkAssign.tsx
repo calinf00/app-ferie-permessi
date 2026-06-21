@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { XMark, Plus, CheckMark, UsersGroup, Building } from '@/components/icons'
+import { XMark, CheckMark, UsersGroup, Building, Trash } from '@/components/icons'
 
 type LeaveType = { id: string; name: string; color: string }
 type Collaborator = {
@@ -15,12 +15,11 @@ type Collaborator = {
 }
 
 type Step = 'details' | 'recipients' | 'result'
+type Mode = 'assign' | 'remove'
 
-type ResultData = {
-  created: number
-  skipped: number
-  skippedNames: string[]
-}
+type ResultData =
+  | { mode: 'assign'; created: number; skipped: number; skippedNames: string[] }
+  | { mode: 'remove'; deleted: number; userCount: number }
 
 function initials(c: Collaborator) {
   const name = c.full_name ?? c.email
@@ -35,6 +34,7 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
   const router = useRouter()
 
   const [step, setStep] = useState<Step>('details')
+  const [mode, setMode] = useState<Mode>('assign')
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [loading, setLoading] = useState(false)
@@ -65,7 +65,6 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
         .from('profiles')
         .select('id, full_name, email, team, company')
         .eq('is_active', true)
-        .eq('role', 'user')
         .order('full_name'),
     ]).then(([lt, pr]) => {
       if (lt.data) {
@@ -113,10 +112,20 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
     }
   }
 
+  function switchMode(next: Mode) {
+    setMode(next)
+    setStep('details')
+    setError('')
+  }
+
   // Step 1 → 2 validation
   function goToRecipients() {
-    if (!form.leave_type_id || !form.start_date) return
-    if (!form.isPartial && !form.end_date) return
+    if (mode === 'remove') {
+      if (!form.start_date || !form.end_date) return
+    } else {
+      if (!form.leave_type_id || !form.start_date) return
+      if (!form.isPartial && !form.end_date) return
+    }
     setError('')
     setStep('recipients')
   }
@@ -155,7 +164,40 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
       .filter(c => (data.skippedIds ?? []).includes(c.id))
       .map(c => c.full_name ?? c.email)
 
-    setResult({ created: data.created, skipped: data.skipped, skippedNames })
+    setResult({ mode: 'assign', created: data.created, skipped: data.skipped, skippedNames })
+    setStep('result')
+    router.refresh()
+  }
+
+  async function handleRemove() {
+    if (effectiveIds.length === 0) {
+      setError('Seleziona almeno un collaboratore')
+      return
+    }
+    setLoading(true)
+    setError('')
+
+    const userCount = effectiveIds.length
+    const res = await fetch('/api/admin/bulk-delete-leave-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userIds: effectiveIds,
+        leave_type_id: form.leave_type_id || null,
+        start_date: form.start_date,
+        end_date: form.end_date,
+      }),
+    })
+
+    const data = await res.json()
+    setLoading(false)
+
+    if (!res.ok) {
+      setError(data.error ?? 'Errore durante la rimozione')
+      return
+    }
+
+    setResult({ mode: 'remove', deleted: data.deleted, userCount })
     setStep('result')
     router.refresh()
   }
@@ -172,23 +214,37 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
           <div>
-            <h3 className="font-semibold text-gray-900">Assegnazione assenze</h3>
+            <h3 className="font-semibold text-gray-900">{mode === 'remove' ? 'Rimozione assenze' : 'Assegnazione assenze'}</h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {step === 'details' ? 'Passo 1 di 2 · Dettagli assenza'
                 : step === 'recipients' ? 'Passo 2 di 2 · Selezione collaboratori'
                 : 'Completato'}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-            <XMark className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            {step !== 'result' && (
+              <div className="flex gap-0.5 bg-gray-100 p-1 rounded-xl">
+                <button type="button" onClick={() => switchMode('assign')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'assign' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Assegna
+                </button>
+                <button type="button" onClick={() => switchMode('remove')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${mode === 'remove' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Rimuovi
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <XMark className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}
         {step !== 'result' && (
           <div className="h-0.5 bg-gray-100 shrink-0">
             <div
-              className="h-full bg-slate-700 transition-all duration-300"
+              className={`h-full transition-all duration-300 ${mode === 'remove' ? 'bg-red-600' : 'bg-slate-700'}`}
               style={{ width: step === 'details' ? '50%' : '100%' }}
             />
           </div>
@@ -201,15 +257,17 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
             <div className="px-6 py-5 flex flex-col gap-4">
               {/* Leave type */}
               <div>
-                <label className={labelCls}>Tipo di assenza</label>
+                <label className={labelCls}>{mode === 'remove' ? 'Tipo di assenza da rimuovere' : 'Tipo di assenza'}</label>
                 <select value={form.leave_type_id} onChange={e => set('leave_type_id', e.target.value)} className={inputCls}>
+                  {mode === 'remove' && <option value="">Tutti i tipi</option>}
                   {leaveTypes.map(lt => (
                     <option key={lt.id} value={lt.id}>{lt.name}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Mode toggle */}
+              {/* Mode toggle (giornata/ore) — solo in assegna */}
+              {mode === 'assign' && (
               <div>
                 <label className={labelCls}>Modalità</label>
                 <div className="flex gap-0.5 bg-gray-100 p-1 rounded-xl">
@@ -223,9 +281,10 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
               </div>
+              )}
 
               {/* Dates */}
-              {form.isPartial ? (
+              {mode === 'assign' && form.isPartial ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>Data</label>
@@ -251,7 +310,8 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {/* Status */}
+              {/* Status — solo in assegna */}
+              {mode === 'assign' && (
               <div>
                 <label className={labelCls}>Stato</label>
                 <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
@@ -259,8 +319,10 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                   <option value="pending">In attesa di conferma</option>
                 </select>
               </div>
+              )}
 
-              {/* Admin notes */}
+              {/* Admin notes — solo in assegna */}
+              {mode === 'assign' && (
               <div>
                 <label className={labelCls}>Nota per i collaboratori <span className="normal-case font-normal text-gray-400">(opzionale)</span></label>
                 <input
@@ -271,6 +333,7 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                   className={inputCls}
                 />
               </div>
+              )}
 
               {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</p>}
 
@@ -281,7 +344,9 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={goToRecipients}
-                  disabled={!form.leave_type_id || !form.start_date || (!form.isPartial && !form.end_date)}
+                  disabled={mode === 'remove'
+                    ? (!form.start_date || !form.end_date)
+                    : (!form.leave_type_id || !form.start_date || (!form.isPartial && !form.end_date))}
                   className="flex-1 bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-40"
                 >
                   Avanti →
@@ -299,11 +364,13 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                 {selectedLeaveType && (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedLeaveType.color }} />
                 )}
-                <span className="text-sm font-medium text-slate-700">{selectedLeaveType?.name}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {mode === 'remove' && !selectedLeaveType ? 'Tutti i tipi' : selectedLeaveType?.name}
+                </span>
                 <span className="text-xs text-gray-400 ml-auto">
-                  {form.isPartial
+                  {mode === 'assign' && form.isPartial
                     ? `${form.start_date} · ${form.hours}h`
-                    : form.start_date === (form.isPartial ? form.start_date : form.end_date)
+                    : form.start_date === form.end_date
                       ? form.start_date
                       : `${form.start_date} → ${form.end_date}`}
                 </span>
@@ -421,18 +488,22 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleSubmit}
+                  onClick={mode === 'remove' ? handleRemove : handleSubmit}
                   disabled={loading || effectiveIds.length === 0}
-                  className="flex-1 bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-40"
+                  className={`flex-1 text-white rounded-xl py-2.5 text-sm font-medium transition-colors disabled:opacity-40 ${
+                    mode === 'remove' ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-800'
+                  }`}
                 >
-                  {loading ? 'Assegnazione…' : `Assegna a ${effectiveIds.length} ${effectiveIds.length === 1 ? 'collaboratore' : 'collaboratori'}`}
+                  {mode === 'remove'
+                    ? (loading ? 'Rimozione…' : `Rimuovi da ${effectiveIds.length} ${effectiveIds.length === 1 ? 'collaboratore' : 'collaboratori'}`)
+                    : (loading ? 'Assegnazione…' : `Assegna a ${effectiveIds.length} ${effectiveIds.length === 1 ? 'collaboratore' : 'collaboratori'}`)}
                 </button>
               </div>
             </div>
           )}
 
           {/* ── STEP 3: RESULT ── */}
-          {step === 'result' && result && (
+          {step === 'result' && result && result.mode === 'assign' && (
             <div className="px-6 py-8 flex flex-col items-center gap-5 text-center">
               <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center">
                 <CheckMark className="w-8 h-8 text-emerald-500" />
@@ -456,6 +527,29 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                   </ul>
                 </div>
               )}
+
+              <button
+                onClick={onClose}
+                className="w-full bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors"
+              >
+                Chiudi
+              </button>
+            </div>
+          )}
+
+          {step === 'result' && result && result.mode === 'remove' && (
+            <div className="px-6 py-8 flex flex-col items-center gap-5 text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
+                <Trash className="w-8 h-8 text-red-500" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900">Rimozione completata</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {result.deleted} {result.deleted === 1 ? 'assenza rimossa' : 'assenze rimosse'}
+                  {' · '}
+                  {result.userCount} {result.userCount === 1 ? 'collaboratore' : 'collaboratori'}
+                </p>
+              </div>
 
               <button
                 onClick={onClose}

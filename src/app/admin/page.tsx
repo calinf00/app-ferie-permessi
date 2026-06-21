@@ -54,7 +54,7 @@ export default async function AdminPage({
     if (activeTab === 'collaboratori') {
       const { data: usersData, error: usersError } = await admin
         .from('profiles')
-        .select('id, full_name, role, is_active, company, team, job_title, hire_date, end_date, notes, annual_leave_days, email')
+        .select('id, full_name, role, is_active, company, team, job_title, hire_date, end_date, notes, annual_riposi_days, annual_permessi_days, email')
         .order('full_name', { ascending: true })
       if (usersError) {
         console.error('[admin] profiles error:', usersError)
@@ -87,8 +87,8 @@ export default async function AdminPage({
           .order('full_name'),
         admin
           .from('leave_requests')
-          .select('id, start_date, end_date, hours, user_id, leave_types(name, color)')
-          .eq('status', 'approved')
+          .select('id, start_date, end_date, hours, user_id, status, leave_types(name, color)')
+          .in('status', ['approved', 'pending'])
           .gte('end_date', `${yr - 1}-01-01`)
           .lte('start_date', `${yr + 2}-12-31`)
           .order('start_date'),

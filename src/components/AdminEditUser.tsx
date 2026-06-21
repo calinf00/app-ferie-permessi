@@ -16,7 +16,8 @@ export type UserProfile = {
   hire_date: string | null
   end_date: string | null
   notes: string | null
-  annual_leave_days: number
+  annual_riposi_days: number
+  annual_permessi_days: number
 }
 
 export default function AdminEditUser({
@@ -28,18 +29,19 @@ export default function AdminEditUser({
 }) {
   const router = useRouter()
   const [form, setForm] = useState({
-    full_name:         user.full_name         ?? '',
-    email:             user.email,
-    password:          '',
-    company:           user.company           ?? '',
-    team:              user.team              ?? '',
-    job_title:         user.job_title         ?? '',
-    hire_date:         user.hire_date         ?? '',
-    end_date:          user.end_date          ?? '',
-    notes:             user.notes             ?? '',
-    annual_leave_days: String(user.annual_leave_days ?? 20),
-    role:              user.role,
-    is_active:         user.is_active,
+    full_name:            user.full_name            ?? '',
+    email:                user.email,
+    password:             '',
+    company:              user.company              ?? '',
+    team:                 user.team                 ?? '',
+    job_title:            user.job_title            ?? '',
+    hire_date:            user.hire_date            ?? '',
+    end_date:             user.end_date             ?? '',
+    notes:                user.notes                ?? '',
+    annual_riposi_days:   String(user.annual_riposi_days   ?? 18),
+    annual_permessi_days: String(user.annual_permessi_days ?? 5),
+    role:                 user.role,
+    is_active:            user.is_active,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -52,17 +54,18 @@ export default function AdminEditUser({
     setError('')
 
     const body: Record<string, unknown> = {
-      userId:            user.id,
-      full_name:         form.full_name,
-      company:           form.company,
-      team:              form.team,
-      job_title:         form.job_title,
-      hire_date:         form.hire_date || null,
-      end_date:          form.end_date  || null,
-      notes:             form.notes,
-      annual_leave_days: parseInt(form.annual_leave_days) || 20,
-      role:              form.role,
-      is_active:         form.is_active,
+      userId:               user.id,
+      full_name:            form.full_name,
+      company:              form.company,
+      team:                 form.team,
+      job_title:            form.job_title,
+      hire_date:            form.hire_date || null,
+      end_date:             form.end_date  || null,
+      notes:                form.notes,
+      annual_riposi_days:   parseInt(form.annual_riposi_days)   || 18,
+      annual_permessi_days: parseInt(form.annual_permessi_days) || 5,
+      role:                 form.role,
+      is_active:            form.is_active,
     }
     if (form.email !== user.email) body.email = form.email
     if (form.password) body.password = form.password
@@ -85,9 +88,7 @@ export default function AdminEditUser({
   const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors bg-white'
   const labelCls = 'block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide'
 
-  const monthlyRate = (parseInt(form.annual_leave_days) / 12).toFixed(2)
-  const weeklyRate  = (parseInt(form.annual_leave_days) / 52).toFixed(2)
-  const JOB_TITLES  = ['Tecnico', 'Sviluppatore', 'Designer', 'Responsabile di team', 'Direzione', 'Commerciale', 'Amministrazione', 'Consulente']
+  const JOB_TITLES = ['Tecnico', 'Sviluppatore', 'Designer', 'Responsabile di team', 'Direzione', 'Commerciale', 'Amministrazione', 'Consulente']
 
   return (
     <div
@@ -159,21 +160,27 @@ export default function AdminEditUser({
                 <label className={labelCls}>Fine collaborazione</label>
                 <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} className={inputCls} min={form.hire_date || undefined} />
               </div>
-              <div className="col-span-2">
-                <label className={labelCls}>Giorni di assenza / anno</label>
+              <div>
+                <label className={labelCls}>Riposi / anno (gg)</label>
                 <input
                   type="number"
                   min="0"
                   max="365"
-                  value={form.annual_leave_days}
-                  onChange={e => set('annual_leave_days', e.target.value)}
+                  value={form.annual_riposi_days}
+                  onChange={e => set('annual_riposi_days', e.target.value)}
                   className={inputCls}
                 />
-                {parseInt(form.annual_leave_days) > 0 && (
-                  <p className="text-xs text-gray-400 mt-2 bg-gray-50 rounded-lg px-3 py-2">
-                    Maturazione: <span className="font-medium text-gray-600">{monthlyRate} gg/mese</span> · <span className="font-medium text-gray-600">{weeklyRate} gg/settimana</span>
-                  </p>
-                )}
+              </div>
+              <div>
+                <label className={labelCls}>Permessi / anno (gg)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="365"
+                  value={form.annual_permessi_days}
+                  onChange={e => set('annual_permessi_days', e.target.value)}
+                  className={inputCls}
+                />
               </div>
             </div>
           </div>
