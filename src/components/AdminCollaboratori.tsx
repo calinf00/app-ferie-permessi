@@ -48,11 +48,16 @@ function YearPanel({ year, user, requests }: {
   const currentYear = new Date().getFullYear()
   const isPast = year < currentYear
 
+  // Assunto durante l'anno visualizzato → mostriamo anche i giorni maturabili nell'anno (pro-rata)
+  const hiredThisYear = user.hire_date ? new Date(user.hire_date).getFullYear() === year : false
+
   const riposiMaturati = calcAccruedWeekly(user.annual_riposi_days, user.hire_date, year)
+  const riposiAnnui    = calcAnnualEntitlementWeekly(user.annual_riposi_days, user.hire_date, year)
   const riposiUsati    = calcUsedDaysInCategory('riposi', requests, year)
   const riposiDelta    = Math.max(0, Math.round((riposiMaturati - riposiUsati) * 10) / 10)
 
   const permssMaturati = calcAccruedMonthly(user.annual_permessi_days, user.hire_date, year)
+  const permssAnnui    = calcAnnualEntitlement(user.annual_permessi_days, user.hire_date, year)
   const permssUsati    = calcUsedDaysInCategory('permessi', requests, year)
   const permssDelta    = Math.max(0, Math.round((permssMaturati - permssUsati) * 10) / 10)
 
@@ -84,6 +89,7 @@ function YearPanel({ year, user, requests }: {
           </p>
           <div className="grid grid-cols-4 gap-2 bg-slate-50 rounded-lg px-3 py-2.5">
             {statCell('Maturati', riposiMaturati)}
+            {hiredThisYear && statCell('Tot. anno', riposiAnnui)}
             {statCell('Usati', riposiUsati)}
             {isPast
               ? statCell('Scaduti', riposiDelta)
@@ -98,6 +104,7 @@ function YearPanel({ year, user, requests }: {
           </p>
           <div className="grid grid-cols-4 gap-2 bg-blue-50 rounded-lg px-3 py-2.5">
             {statCell('Maturati', permssMaturati)}
+            {hiredThisYear && statCell('Tot. anno', permssAnnui)}
             {statCell('Usati', permssUsati)}
             {isPast
               ? statCell('Scaduti', permssDelta)
