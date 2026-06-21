@@ -18,6 +18,13 @@ export type LeaveRequest = {
   created_at: string
   profiles: { full_name: string | null; email: string } | null
   leave_types: { name: string; color: string } | null
+  modification_requested?: boolean
+  pending_leave_type_id?: string | null
+  pending_start_date?: string | null
+  pending_end_date?: string | null
+  pending_hours?: number | null
+  pending_notes?: string | null
+  pending_leave_type?: { name: string; color: string } | null
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -48,10 +55,11 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
   const [editing, setEditing] = useState<RequestToEdit | null>(null)
 
-  const needsAction = (s: string) => s === 'pending' || s === 'cancellation_requested'
-  const pendingCount = requests.filter(r => needsAction(r.status)).length
+  const needsAction = (r: LeaveRequest) =>
+    r.status === 'pending' || r.status === 'cancellation_requested' || !!r.modification_requested
+  const pendingCount = requests.filter(needsAction).length
 
-  const filtered = filter === 'pending' ? requests.filter(r => needsAction(r.status)) : requests
+  const filtered = filter === 'pending' ? requests.filter(needsAction) : requests
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await supabase.from('leave_requests').update({ status }).eq('id', id)
@@ -67,6 +75,46 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
   async function rejectCancellation(id: string) {
     await supabase.from('leave_requests').update({ status: 'approved' }).eq('id', id)
     router.refresh()
+  }
+
+  const clearedPending = {
+    modification_requested: false,
+    pending_leave_type_id: null,
+    pending_start_date: null,
+    pending_end_date: null,
+    pending_hours: null,
+    pending_notes: null,
+  }
+
+  async function confirmModification(req: LeaveRequest) {
+    await supabase
+      .from('leave_requests')
+      .update({
+        leave_type_id: req.pending_leave_type_id,
+        start_date: req.pending_start_date,
+        end_date: req.pending_end_date,
+        hours: req.pending_hours,
+        notes: req.pending_notes,
+        status: 'approved',
+        admin_modified: false,
+        ...clearedPending,
+      })
+      .eq('id', req.id)
+    router.refresh()
+  }
+
+  async function rejectModification(id: string) {
+    await supabase.from('leave_requests').update(clearedPending).eq('id', id)
+    router.refresh()
+  }
+
+  function pendingLabel(req: LeaveRequest) {
+    const type = req.pending_leave_type?.name ?? 'Assenza'
+    if (req.pending_hours) {
+      return `${type} · ${formatDate(req.pending_start_date!)} (${req.pending_hours}h)`
+    }
+    const s = req.pending_start_date!, e = req.pending_end_date!
+    return `${type} · ${formatDate(s)}${s !== e ? ` — ${formatDate(e)}` : ''}`
   }
 
   return (
@@ -168,6 +216,27 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
                       >
                         Rifiuta
                       </button>
+                    </div>
+                  ) : req.modification_requested ? (
+                    <div className="flex flex-col items-start sm:items-end gap-1.5">
+                      <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 border border-orange-100">
+                        Modifica richiesta
+                      </span>
+                      <span className="text-xs text-gray-500">→ {pendingLabel(req)}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => confirmModification(req)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+                        >
+                          Conferma modifica
+                        </button>
+                        <button
+                          onClick={() => rejectModification(req.id)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          Rifiuta
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>

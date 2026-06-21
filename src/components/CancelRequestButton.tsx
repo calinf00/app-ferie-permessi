@@ -30,7 +30,7 @@ export default function CancelRequestButton({
   }
 
   async function requestCancellation() {
-    if (!confirm("Vuoi richiedere l'annullamento di questa comunicazione confermata?")) return
+    if (!confirm("Vuoi comunicare l'annullamento di questa comunicazione confermata?")) return
     setLoading(true)
     await supabase
       .from('leave_requests')
@@ -60,7 +60,7 @@ export default function CancelRequestButton({
         disabled={loading}
         className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-100 transition-colors disabled:opacity-50"
       >
-        Richiedi annullamento
+        Comunica annullamento
       </button>
     )
   }

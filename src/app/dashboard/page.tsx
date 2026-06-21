@@ -74,7 +74,7 @@ export default async function DashboardPage({
   const [{ data: requests }, { data: leaveTypes }] = await Promise.all([
     supabase
       .from('leave_requests')
-      .select('id, leave_type_id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, leave_types(name, color)')
+      .select('id, leave_type_id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, modification_requested, pending_start_date, pending_end_date, pending_hours, leave_types(name, color)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('leave_types').select('id, name, color'),
@@ -314,8 +314,28 @@ export default async function DashboardPage({
                       <span className={`text-xs font-medium px-3 py-1.5 rounded-lg ${STATUS_STYLE[req.status]}`}>
                         {STATUS_LABEL[req.status]}
                       </span>
+                      {req.modification_requested && (
+                        <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 border border-orange-100">
+                          Modifica in attesa
+                        </span>
+                      )}
                       {req.status === 'pending' && (
                         <ModificaComunicazioneButton
+                          leaveTypes={leaveTypes ?? []}
+                          comunicazione={{
+                            id: req.id,
+                            leave_type_id: req.leave_type_id,
+                            start_date: req.start_date,
+                            end_date: req.end_date,
+                            hours: req.hours ?? null,
+                            notes: req.notes,
+                          }}
+                          userId={user.id}
+                        />
+                      )}
+                      {req.status === 'approved' && !req.modification_requested && (
+                        <ModificaComunicazioneButton
+                          isApproved
                           leaveTypes={leaveTypes ?? []}
                           comunicazione={{
                             id: req.id,

@@ -22,10 +22,12 @@ export default function ModificaComunicazioneButton({
   leaveTypes,
   comunicazione,
   userId,
+  isApproved = false,
 }: {
   leaveTypes: LeaveType[]
   comunicazione: Comunicazione
   userId: string
+  isApproved?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [isPartial, setIsPartial] = useState(!!comunicazione.hours)
@@ -37,6 +39,7 @@ export default function ModificaComunicazioneButton({
     notes: comunicazione.notes ?? '',
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [conflicts, setConflicts] = useState<Conflict[]>([])
   const router = useRouter()
   const supabase = createClient()
@@ -69,6 +72,33 @@ export default function ModificaComunicazioneButton({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError('')
+
+    if (isApproved) {
+      // Comunicazione già confermata: invia una richiesta di modifica all'admin
+      const res = await fetch('/api/request-modification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: comunicazione.id,
+          leave_type_id: form.leave_type_id,
+          start_date: form.start_date,
+          end_date: isPartial ? form.start_date : form.end_date,
+          hours: isPartial ? parseInt(form.hours) : null,
+          notes: form.notes || null,
+        }),
+      })
+      const data = await res.json()
+      setLoading(false)
+      if (!res.ok) {
+        setError(data.error ?? 'Errore durante l\'invio della modifica')
+        return
+      }
+      setOpen(false)
+      router.refresh()
+      return
+    }
+
     await supabase
       .from('leave_requests')
       .update({
@@ -95,7 +125,7 @@ export default function ModificaComunicazioneButton({
         className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-200 transition-colors flex items-center gap-1"
       >
         <Pencil className="w-3.5 h-3.5" />
-        Modifica
+        {isApproved ? 'Comunica modifica' : 'Modifica'}
       </button>
 
       {open && (
@@ -105,7 +135,7 @@ export default function ModificaComunicazioneButton({
         >
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-              <h3 className="font-semibold text-gray-900">Modifica comunicazione</h3>
+              <h3 className="font-semibold text-gray-900">{isApproved ? 'Comunica modifica' : 'Modifica comunicazione'}</h3>
               <button
                 onClick={() => setOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
@@ -234,6 +264,16 @@ export default function ModificaComunicazioneButton({
                 />
               </div>
 
+              {isApproved && (
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                  La comunicazione è già confermata: la modifica verrà inviata all&apos;admin per la conferma. L&apos;assenza attuale resta valida finché non viene approvata.
+                </p>
+              )}
+
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</p>
+              )}
+
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
@@ -247,7 +287,7 @@ export default function ModificaComunicazioneButton({
                   disabled={loading || !form.leave_type_id}
                   className="flex-1 bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Salvataggio…' : 'Salva modifiche'}
+                  {loading ? 'Invio…' : isApproved ? 'Invia modifica' : 'Salva modifiche'}
                 </button>
               </div>
             </form>

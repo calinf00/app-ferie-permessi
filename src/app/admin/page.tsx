@@ -39,15 +39,22 @@ export default async function AdminPage({
     const admin = createAdminClient()
 
     if (activeTab === 'richieste') {
-      const { data, error } = await admin
-        .from('leave_requests')
-        .select('id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, created_at, profiles!user_id(full_name, email), leave_types(name, color)')
-        .order('created_at', { ascending: false })
+      const [{ data, error }, { data: ltData }] = await Promise.all([
+        admin
+          .from('leave_requests')
+          .select('id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, created_at, modification_requested, pending_leave_type_id, pending_start_date, pending_end_date, pending_hours, pending_notes, profiles!user_id(full_name, email), leave_types(name, color)')
+          .order('created_at', { ascending: false }),
+        admin.from('leave_types').select('id, name, color'),
+      ])
       if (error) {
         console.error('[admin] leave_requests error:', error)
         adminError = error.message
       } else {
-        requests = (data as unknown as LeaveRequest[]) ?? []
+        const ltMap = new Map((ltData ?? []).map((lt: any) => [lt.id, { name: lt.name as string, color: lt.color as string }]))
+        requests = ((data as unknown as LeaveRequest[]) ?? []).map(r => ({
+          ...r,
+          pending_leave_type: r.pending_leave_type_id ? (ltMap.get(r.pending_leave_type_id) ?? null) : null,
+        }))
       }
     }
 
