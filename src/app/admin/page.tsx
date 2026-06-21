@@ -50,7 +50,9 @@ export default async function AdminPage({
         console.error('[admin] leave_requests error:', error)
         adminError = error.message
       } else {
-        const ltMap = new Map((ltData ?? []).map((lt: any) => [lt.id, { name: lt.name as string, color: lt.color as string }]))
+        const ltMap = new Map(
+          ((ltData ?? []) as { id: string; name: string; color: string }[]).map(lt => [lt.id, { name: lt.name, color: lt.color }])
+        )
         requests = ((data as unknown as LeaveRequest[]) ?? []).map(r => ({
           ...r,
           pending_leave_type: r.pending_leave_type_id ? (ltMap.get(r.pending_leave_type_id) ?? null) : null,

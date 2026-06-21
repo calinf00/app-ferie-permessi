@@ -26,12 +26,16 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
   const supabase = createClient()
 
   // Le ore hanno senso solo per permesso/ferie/congedo: per malattia e "altro" (giornata intera) le nascondiamo
-  const selectedType = leaveTypes.find(lt => lt.id === form.leave_type_id)
-  const allowsHours = !['malatt', 'altro'].some(k => (selectedType?.name?.toLowerCase() ?? '').includes(k))
+  const typeAllowsHours = (id: string) => {
+    const name = leaveTypes.find(lt => lt.id === id)?.name?.toLowerCase() ?? ''
+    return !['malatt', 'altro'].some(k => name.includes(k))
+  }
+  const allowsHours = typeAllowsHours(form.leave_type_id)
 
-  useEffect(() => {
-    if (!allowsHours && isPartial) setIsPartial(false)
-  }, [allowsHours, isPartial])
+  function changeLeaveType(id: string) {
+    setForm(f => ({ ...f, leave_type_id: id }))
+    if (!typeAllowsHours(id)) setIsPartial(false)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -125,7 +129,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                 <label className={labelCls}>Tipo di assenza</label>
                 <select
                   value={form.leave_type_id}
-                  onChange={e => setForm(f => ({ ...f, leave_type_id: e.target.value }))}
+                  onChange={e => changeLeaveType(e.target.value)}
                   className={inputCls}
                 >
                   {leaveTypes.map(lt => (

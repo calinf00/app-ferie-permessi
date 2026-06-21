@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { XMark } from '@/components/icons'
-import OrarioPermesso, { emptyOrario, orarioToRanges, rangesToOrario, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
+import OrarioPermesso, { orarioToRanges, rangesToOrario, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
 import { type TimeRanges } from '@/lib/leave-utils'
 
 type LeaveType = { id: string; name: string; color: string }
