@@ -44,10 +44,11 @@ export async function POST(request: NextRequest) {
     serviceRoleKey
   )
 
-  // Update auth (email/password) if provided
-  const authUpdates: Record<string, string> = {}
+  // Update auth (email/password/display name) if provided
+  const authUpdates: { email?: string; password?: string; user_metadata?: Record<string, unknown> } = {}
   if (email) authUpdates.email = email
   if (password) authUpdates.password = password
+  if (full_name !== undefined) authUpdates.user_metadata = { full_name, display_name: full_name }
 
   if (Object.keys(authUpdates).length > 0) {
     const { error } = await adminClient.auth.admin.updateUserById(userId, authUpdates)
