@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Pencil, Building, UsersGroup, CalendarDays, ChartBar, ChevronDown } from '@/components/icons'
+import { Pencil, Building, UsersGroup, CalendarDays, ChartBar, ChevronDown, MagnifyingGlass, Funnel, XMark } from '@/components/icons'
 import AdminEditUser, { type UserProfile } from '@/components/AdminEditUser'
 import AdminGestioneAssenze, { type FullLeaveRequest } from '@/components/AdminGestioneAssenze'
 import {
-  categorizeLeaveType,
   calcAccruedWeekly,
   calcAnnualEntitlementWeekly,
   calcUsedDaysInCategory,
@@ -129,11 +128,76 @@ function YearPanel({ year, user, requests }: {
   )
 }
 
+type SortKey = 'az' | 'za' | 'recent' | 'oldest'
+
 export default function AdminCollaboratori({ users }: { users: UserWithRequests[] }) {
   const [editing, setEditing] = useState<UserProfile | null>(null)
   const [managingAssenze, setManagingAssenze] = useState<UserWithRequests | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [allExpanded, setAllExpanded] = useState(false)
+
+  // Ricerca e filtri
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortKey>('az')
+  const [teamFilter, setTeamFilter] = useState('all')
+  const [companyFilter, setCompanyFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'collaboratore'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [hiredThisYearOnly, setHiredThisYearOnly] = useState(false)
+
+  const currentYear = new Date().getFullYear()
+
+  const teams = useMemo(
+    () => Array.from(new Set(users.map(u => u.team).filter((t): t is string => !!t))).sort((a, b) => a.localeCompare(b, 'it')),
+    [users]
+  )
+  const companies = useMemo(
+    () => Array.from(new Set(users.map(u => u.company).filter((c): c is string => !!c))).sort((a, b) => a.localeCompare(b, 'it')),
+    [users]
+  )
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const nameOf = (u: UserWithRequests) => (u.full_name ?? u.email).toLowerCase()
+    const hireTime = (u: UserWithRequests) => (u.hire_date ? new Date(u.hire_date).getTime() : null)
+
+    const list = users.filter(u => {
+      if (q) {
+        const hay = [u.full_name, u.email, u.job_title, u.team, u.company]
+          .filter(Boolean).join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      if (teamFilter !== 'all' && u.team !== teamFilter) return false
+      if (companyFilter !== 'all' && u.company !== companyFilter) return false
+      if (roleFilter === 'admin' && u.role !== 'admin') return false
+      if (roleFilter === 'collaboratore' && u.role === 'admin') return false
+      if (statusFilter === 'active' && !u.is_active) return false
+      if (statusFilter === 'inactive' && u.is_active) return false
+      if (hiredThisYearOnly && !(u.hire_date && new Date(u.hire_date).getFullYear() === currentYear)) return false
+      return true
+    })
+
+    return list.sort((a, b) => {
+      if (sort === 'recent' || sort === 'oldest') {
+        const ta = hireTime(a), tb = hireTime(b)
+        if (ta === null && tb === null) return nameOf(a).localeCompare(nameOf(b), 'it')
+        if (ta === null) return 1
+        if (tb === null) return -1
+        return sort === 'recent' ? tb - ta : ta - tb
+      }
+      const cmp = nameOf(a).localeCompare(nameOf(b), 'it')
+      return sort === 'za' ? -cmp : cmp
+    })
+  }, [users, search, sort, teamFilter, companyFilter, roleFilter, statusFilter, hiredThisYearOnly, currentYear])
+
+  const anyFilterActive =
+    search.trim() !== '' || teamFilter !== 'all' || companyFilter !== 'all' ||
+    roleFilter !== 'all' || statusFilter !== 'all' || hiredThisYearOnly
+
+  function resetFilters() {
+    setSearch(''); setSort('az'); setTeamFilter('all'); setCompanyFilter('all')
+    setRoleFilter('all'); setStatusFilter('all'); setHiredThisYearOnly(false)
+  }
 
   function toggleUser(id: string) {
     setExpandedIds(prev => {
@@ -149,10 +213,12 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
       setExpandedIds(new Set())
       setAllExpanded(false)
     } else {
-      setExpandedIds(new Set(users.map(u => u.id)))
+      setExpandedIds(new Set(filtered.map(u => u.id)))
       setAllExpanded(true)
     }
   }
+
+  const selectCls = 'text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300'
 
   return (
     <>
@@ -166,19 +232,103 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
       )}
 
       <div className="flex flex-col gap-3">
+        {/* Ricerca e filtri */}
         {users.length > 0 && (
-          <div className="flex justify-end">
-            <button
-              onClick={toggleAll}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center gap-1"
-            >
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${allExpanded ? 'rotate-180' : ''}`} />
-              {allExpanded ? 'Comprimi tutti' : 'Espandi tutti'}
-            </button>
+          <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 flex flex-col gap-3">
+            <div className="relative">
+              <MagnifyingGlass className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Cerca per nome, email, ruolo, team o azienda…"
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                  title="Pulisci ricerca"
+                >
+                  <XMark className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1 text-xs text-gray-400">
+                <Funnel className="w-3.5 h-3.5" /> Filtri:
+              </span>
+
+              <select value={sort} onChange={e => setSort(e.target.value as SortKey)} className={selectCls}>
+                <option value="az">Nome A → Z</option>
+                <option value="za">Nome Z → A</option>
+                <option value="recent">Assunzione recente</option>
+                <option value="oldest">Assunzione meno recente</option>
+              </select>
+
+              {teams.length > 0 && (
+                <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className={selectCls}>
+                  <option value="all">Tutti i team</option>
+                  {teams.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              )}
+
+              {companies.length > 0 && (
+                <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)} className={selectCls}>
+                  <option value="all">Tutte le aziende</option>
+                  {companies.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+
+              <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as typeof roleFilter)} className={selectCls}>
+                <option value="all">Tutti i ruoli</option>
+                <option value="admin">Admin</option>
+                <option value="collaboratore">Collaboratori</option>
+              </select>
+
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className={selectCls}>
+                <option value="all">Attivi e inattivi</option>
+                <option value="active">Solo attivi</option>
+                <option value="inactive">Solo inattivi</option>
+              </select>
+
+              <button
+                onClick={() => setHiredThisYearOnly(v => !v)}
+                className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                  hiredThisYearOnly
+                    ? 'border-slate-300 bg-slate-100 text-slate-700'
+                    : 'border-gray-200 text-gray-600 hover:bg-slate-50'
+                }`}
+              >
+                Assunti nel {currentYear}
+              </button>
+
+              {anyFilterActive && (
+                <button onClick={resetFilters} className="text-xs font-medium px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                  <XMark className="w-3.5 h-3.5" /> Azzera
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">
+                {filtered.length} di {users.length} collaborator{users.length === 1 ? 'e' : 'i'}
+              </span>
+              {filtered.length > 0 && (
+                <button
+                  onClick={toggleAll}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center gap-1"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${allExpanded ? 'rotate-180' : ''}`} />
+                  {allExpanded ? 'Comprimi tutti' : 'Espandi tutti'}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {users.map(u => {
+        {filtered.map(u => {
           const isExpanded = expandedIds.has(u.id)
           const years = getActiveYears(u.leave_requests)
           const statsRequests = u.leave_requests as LeaveRequestForStats[]
@@ -295,6 +445,18 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
         {users.length === 0 && (
           <div className="text-center py-12 text-gray-400 text-sm">
             Nessun collaboratore registrato
+          </div>
+        )}
+
+        {users.length > 0 && filtered.length === 0 && (
+          <div className="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-3">
+            Nessun collaboratore corrisponde ai filtri
+            <button
+              onClick={resetFilters}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-slate-50 hover:text-slate-700"
+            >
+              Azzera filtri
+            </button>
           </div>
         )}
       </div>
