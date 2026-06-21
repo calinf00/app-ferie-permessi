@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckMark, XMark, Pencil } from '@/components/icons'
 import AdminEditRequest, { type RequestToEdit } from './AdminEditRequest'
+import { type TimeRanges, formatTimeRanges } from '@/lib/leave-utils'
 
 export type LeaveRequest = {
   id: string
@@ -18,11 +19,13 @@ export type LeaveRequest = {
   created_at: string
   profiles: { full_name: string | null; email: string } | null
   leave_types: { name: string; color: string } | null
+  time_ranges?: TimeRanges | null
   modification_requested?: boolean
   pending_leave_type_id?: string | null
   pending_start_date?: string | null
   pending_end_date?: string | null
   pending_hours?: number | null
+  pending_time_ranges?: TimeRanges | null
   pending_notes?: string | null
   pending_leave_type?: { name: string; color: string } | null
 }
@@ -83,6 +86,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
     pending_start_date: null,
     pending_end_date: null,
     pending_hours: null,
+    pending_time_ranges: null,
     pending_notes: null,
   }
 
@@ -94,6 +98,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
         start_date: req.pending_start_date,
         end_date: req.pending_end_date,
         hours: req.pending_hours,
+        time_ranges: req.pending_time_ranges ?? null,
         notes: req.pending_notes,
         status: 'approved',
         admin_modified: false,
@@ -111,7 +116,8 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
   function pendingLabel(req: LeaveRequest) {
     const type = req.pending_leave_type?.name ?? 'Assenza'
     if (req.pending_hours) {
-      return `${type} · ${formatDate(req.pending_start_date!)} (${req.pending_hours}h)`
+      const tr = formatTimeRanges(req.pending_time_ranges)
+      return `${type} · ${formatDate(req.pending_start_date!)} · ${tr || `${req.pending_hours}h`}`
     }
     const s = req.pending_start_date!, e = req.pending_end_date!
     return `${type} · ${formatDate(s)}${s !== e ? ` — ${formatDate(e)}` : ''}`
@@ -151,7 +157,7 @@ export default function AdminRichieste({ requests }: { requests: LeaveRequest[] 
           {filtered.map(req => {
             const days = daysDiff(req.start_date, req.end_date)
             const durationLabel = req.hours
-              ? `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`
+              ? (formatTimeRanges(req.time_ranges) || `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`)
               : `${days} ${days === 1 ? 'giorno' : 'giorni'}`
             const name = req.profiles?.full_name || req.profiles?.email || 'Utente'
             const initials = name.slice(0, 2).toUpperCase()

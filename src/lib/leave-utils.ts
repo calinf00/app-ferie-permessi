@@ -138,3 +138,26 @@ export function formatDateShort(d: string) {
 export function daysDiff(start: string, end: string) {
   return Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1
 }
+
+// --- Permessi a orario: fasce mattina/pomeriggio ---
+export type TimeRange = { start: string; end: string }
+export type TimeRanges = { morning?: TimeRange | null; afternoon?: TimeRange | null }
+
+function rangeHours(r?: TimeRange | null): number {
+  if (!r?.start || !r?.end) return 0
+  const [sh, sm] = r.start.split(':').map(Number)
+  const [eh, em] = r.end.split(':').map(Number)
+  const mins = (eh * 60 + em) - (sh * 60 + sm)
+  return mins > 0 ? mins / 60 : 0
+}
+
+export function hoursFromRanges(tr: TimeRanges | null | undefined): number {
+  if (!tr) return 0
+  return Math.round((rangeHours(tr.morning) + rangeHours(tr.afternoon)) * 100) / 100
+}
+
+export function formatTimeRanges(tr: TimeRanges | null | undefined): string {
+  if (!tr) return ''
+  const f = (r?: TimeRange | null) => (r?.start && r?.end ? `${r.start.slice(0, 5)}–${r.end.slice(0, 5)}` : '')
+  return [f(tr.morning), f(tr.afternoon)].filter(Boolean).join(' · ')
+}

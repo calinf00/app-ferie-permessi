@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
 
   const body = await request.json()
-  const { userId, leave_type_id, start_date, end_date, hours, status, notes } = body
+  const { userId, leave_type_id, start_date, end_date, hours, time_ranges, status, notes } = body
 
   if (!userId || !leave_type_id || !start_date || !end_date) {
     return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
@@ -52,12 +52,13 @@ export async function POST(request: NextRequest) {
       start_date,
       end_date,
       hours: hours ?? null,
+      time_ranges: time_ranges ?? null,
       status: status ?? 'approved',
       notes: notes ?? null,
       admin_modified: true,
       admin_modified_at: new Date().toISOString(),
     })
-    .select('id, start_date, end_date, hours, status, notes, admin_notes, admin_modified, leave_type_id, leave_types(name, color)')
+    .select('id, start_date, end_date, hours, time_ranges, status, notes, admin_notes, admin_modified, leave_type_id, leave_types(name, color)')
     .single()
 
   if (error) {

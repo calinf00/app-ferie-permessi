@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
   const body = await request.json()
-  const { requestId, leave_type_id, start_date, end_date, hours, notes } = body
+  const { requestId, leave_type_id, start_date, end_date, hours, time_ranges, notes } = body
 
   if (!requestId || !leave_type_id || !start_date || !end_date) {
     return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 })
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       pending_start_date: start_date,
       pending_end_date: end_date,
       pending_hours: hours ?? null,
+      pending_time_ranges: time_ranges ?? null,
       pending_notes: notes || null,
     })
     .eq('id', requestId)

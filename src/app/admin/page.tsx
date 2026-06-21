@@ -42,7 +42,7 @@ export default async function AdminPage({
       const [{ data, error }, { data: ltData }] = await Promise.all([
         admin
           .from('leave_requests')
-          .select('id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, created_at, modification_requested, pending_leave_type_id, pending_start_date, pending_end_date, pending_hours, pending_notes, profiles!user_id(full_name, email), leave_types(name, color)')
+          .select('id, start_date, end_date, hours, time_ranges, status, notes, admin_modified, admin_notes, created_at, modification_requested, pending_leave_type_id, pending_start_date, pending_end_date, pending_hours, pending_time_ranges, pending_notes, profiles!user_id(full_name, email), leave_types(name, color)')
           .order('created_at', { ascending: false }),
         admin.from('leave_types').select('id, name, color'),
       ])

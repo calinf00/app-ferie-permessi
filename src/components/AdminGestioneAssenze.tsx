@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { XMark, Plus, Trash, Pencil } from '@/components/icons'
 import AdminEditRequest, { type RequestToEdit } from './AdminEditRequest'
 import type { UserProfile } from './AdminEditUser'
+import OrarioPermesso, { emptyOrario, orarioToRanges, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
 
 export type FullLeaveRequest = {
   id: string
@@ -42,7 +43,7 @@ function daysDiff(start: string, end: string) {
   return Math.round((new Date(e[0], e[1]-1, e[2]).getTime() - new Date(s[0], s[1]-1, s[2]).getTime()) / 86400000) + 1
 }
 
-const EMPTY_ADD = { leave_type_id: '', isPartial: false, hours: '4', start_date: '', end_date: '', status: 'approved', notes: '' }
+const EMPTY_ADD = { leave_type_id: '', isPartial: false, start_date: '', end_date: '', status: 'approved', notes: '' }
 
 export default function AdminGestioneAssenze({
   user,
@@ -60,6 +61,7 @@ export default function AdminGestioneAssenze({
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [showAdd, setShowAdd] = useState(false)
   const [addForm, setAddForm] = useState(EMPTY_ADD)
+  const [addOrario, setAddOrario] = useState<OrarioValue>(emptyOrario)
   const [loadingAdd, setLoadingAdd] = useState(false)
   const [addError, setAddError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -80,6 +82,10 @@ export default function AdminGestioneAssenze({
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
+    if (addForm.isPartial && orarioHours(addOrario) <= 0) {
+      setAddError('Inserisci almeno una fascia oraria valida (mattina o pomeriggio).')
+      return
+    }
     setLoadingAdd(true)
     setAddError('')
 
@@ -91,7 +97,8 @@ export default function AdminGestioneAssenze({
         leave_type_id: addForm.leave_type_id,
         start_date: addForm.start_date,
         end_date: addForm.isPartial ? addForm.start_date : addForm.end_date,
-        hours: addForm.isPartial ? parseInt(addForm.hours) : null,
+        hours: addForm.isPartial ? orarioHours(addOrario) : null,
+        time_ranges: addForm.isPartial ? orarioToRanges(addOrario) : null,
         status: addForm.status,
         notes: addForm.notes || null,
       }),
@@ -105,6 +112,7 @@ export default function AdminGestioneAssenze({
     } else if (data.request) {
       setRequests(prev => [data.request, ...prev])
       setAddForm({ ...EMPTY_ADD, leave_type_id: addForm.leave_type_id })
+      setAddOrario(emptyOrario)
       setShowAdd(false)
       router.refresh()
     }
@@ -203,17 +211,12 @@ export default function AdminGestioneAssenze({
 
                 {/* Dates / hours */}
                 {addForm.isPartial ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-3">
                     <div>
                       <label className={labelCls}>Data</label>
                       <input type="date" required value={addForm.start_date} onChange={e => setAdd('start_date', e.target.value)} className={inputCls} />
                     </div>
-                    <div>
-                      <label className={labelCls}>Ore</label>
-                      <select value={addForm.hours} onChange={e => setAdd('hours', e.target.value)} className={inputCls}>
-                        {[1,2,3,4,5,6,7,8].map(h => <option key={h} value={h}>{h} {h === 1 ? 'ora' : 'ore'}</option>)}
-                      </select>
-                    </div>
+                    <OrarioPermesso value={addOrario} onChange={setAddOrario} />
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">

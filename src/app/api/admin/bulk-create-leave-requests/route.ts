@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!serviceRoleKey) return NextResponse.json({ error: 'Configurazione server incompleta' }, { status: 500 })
 
   const body = await request.json()
-  const { userIds, leave_type_id, start_date, end_date, hours, status, admin_notes } = body
+  const { userIds, leave_type_id, start_date, end_date, hours, time_ranges, status, admin_notes } = body
 
   if (!userIds?.length || !leave_type_id || !start_date || !end_date) {
     return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     start_date,
     end_date,
     hours: hours ?? null,
+    time_ranges: time_ranges ?? null,
     status: status ?? 'approved',
     notes: null,
     admin_notes: admin_notes ?? null,

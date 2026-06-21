@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { XMark, CheckMark, UsersGroup, Building, Trash } from '@/components/icons'
+import OrarioPermesso, { emptyOrario, orarioToRanges, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
 
 type LeaveType = { id: string; name: string; color: string }
 type Collaborator = {
@@ -47,10 +48,10 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
     isPartial: false,
     start_date: '',
     end_date: '',
-    hours: '4',
     status: 'approved',
     admin_notes: '',
   })
+  const [orario, setOrario] = useState<OrarioValue>(emptyOrario)
 
   // Step 2 — recipient selection
   const [filterMode, setFilterMode] = useState<'all' | 'team' | 'company' | 'manual'>('all')
@@ -135,6 +136,10 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
       setError('Seleziona almeno un collaboratore')
       return
     }
+    if (form.isPartial && orarioHours(orario) <= 0) {
+      setError('Inserisci almeno una fascia oraria valida (mattina o pomeriggio).')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -146,7 +151,8 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
         leave_type_id: form.leave_type_id,
         start_date: form.start_date,
         end_date: form.isPartial ? form.start_date : form.end_date,
-        hours: form.isPartial ? parseInt(form.hours) : null,
+        hours: form.isPartial ? orarioHours(orario) : null,
+        time_ranges: form.isPartial ? orarioToRanges(orario) : null,
         status: form.status,
         admin_notes: form.admin_notes || null,
       }),
@@ -285,17 +291,12 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
 
               {/* Dates */}
               {mode === 'assign' && form.isPartial ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-3">
                   <div>
                     <label className={labelCls}>Data</label>
                     <input type="date" value={form.start_date} required onChange={e => set('start_date', e.target.value)} className={inputCls} />
                   </div>
-                  <div>
-                    <label className={labelCls}>Ore</label>
-                    <select value={form.hours} onChange={e => set('hours', e.target.value)} className={inputCls}>
-                      {[1,2,3,4,5,6,7,8].map(h => <option key={h} value={h}>{h} {h === 1 ? 'ora' : 'ore'}</option>)}
-                    </select>
-                  </div>
+                  <OrarioPermesso value={orario} onChange={setOrario} />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -369,7 +370,7 @@ export default function AdminBulkAssign({ onClose }: { onClose: () => void }) {
                 </span>
                 <span className="text-xs text-gray-400 ml-auto">
                   {mode === 'assign' && form.isPartial
-                    ? `${form.start_date} · ${form.hours}h`
+                    ? `${form.start_date} · ${orarioHours(orario)}h`
                     : form.start_date === form.end_date
                       ? form.start_date
                       : `${form.start_date} → ${form.end_date}`}

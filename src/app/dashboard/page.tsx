@@ -8,7 +8,7 @@ import { SunHorizon, Building, UsersGroup, CalendarDays, DocumentText, ArrowLeft
 import CancelRequestButton from '@/components/CancelRequestButton'
 import ModificaComunicazioneButton from '@/components/ModificaComunicazioneButton'
 import DashboardView from '@/components/DashboardView'
-import { calcAnnualEntitlementWeekly, calcUsedDaysInCategory, fmtDays, formatDate, daysDiff, type LeaveRequestForStats } from '@/lib/leave-utils'
+import { calcAnnualEntitlementWeekly, calcUsedDaysInCategory, fmtDays, formatDate, daysDiff, formatTimeRanges, type LeaveRequestForStats } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
@@ -74,7 +74,7 @@ export default async function DashboardPage({
   const [{ data: requests }, { data: leaveTypes }] = await Promise.all([
     supabase
       .from('leave_requests')
-      .select('id, leave_type_id, start_date, end_date, hours, status, notes, admin_modified, admin_notes, modification_requested, pending_start_date, pending_end_date, pending_hours, leave_types(name, color)')
+      .select('id, leave_type_id, start_date, end_date, hours, time_ranges, status, notes, admin_modified, admin_notes, modification_requested, pending_start_date, pending_end_date, pending_hours, leave_types(name, color)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('leave_types').select('id, name, color'),
@@ -270,7 +270,7 @@ export default async function DashboardPage({
             {requests.map((req: any) => {
               const days = daysDiff(req.start_date, req.end_date)
               const durationLabel = req.hours
-                ? `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`
+                ? (formatTimeRanges(req.time_ranges) || `${req.hours} ${req.hours === 1 ? 'ora' : 'ore'}`)
                 : `${days} ${days === 1 ? 'giorno' : 'giorni'}`
               return (
                 <div
@@ -328,6 +328,7 @@ export default async function DashboardPage({
                             start_date: req.start_date,
                             end_date: req.end_date,
                             hours: req.hours ?? null,
+                            time_ranges: req.time_ranges ?? null,
                             notes: req.notes,
                           }}
                           userId={user.id}
@@ -343,6 +344,7 @@ export default async function DashboardPage({
                             start_date: req.start_date,
                             end_date: req.end_date,
                             hours: req.hours ?? null,
+                            time_ranges: req.time_ranges ?? null,
                             notes: req.notes,
                           }}
                           userId={user.id}

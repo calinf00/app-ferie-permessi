@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { XMark } from '@/components/icons'
+import OrarioPermesso, { emptyOrario, orarioToRanges, rangesToOrario, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
+import { type TimeRanges } from '@/lib/leave-utils'
 
 type LeaveType = { id: string; name: string; color: string }
 
@@ -12,6 +14,7 @@ export type RequestToEdit = {
   start_date: string
   end_date: string
   hours: number | null
+  time_ranges?: TimeRanges | null
   status: string
   notes: string | null
   admin_notes: string | null
@@ -30,10 +33,10 @@ export default function AdminEditRequest({
   const router = useRouter()
 
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
+  const [orario, setOrario] = useState<OrarioValue>(rangesToOrario(request.time_ranges))
   const [form, setForm] = useState({
     leave_type_id: '',
     isPartial: !!request.hours,
-    hours: String(request.hours ?? 4),
     start_date: request.start_date,
     end_date: request.end_date,
     status: request.status,
@@ -59,6 +62,10 @@ export default function AdminEditRequest({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (form.isPartial && orarioHours(orario) <= 0) {
+      setError('Inserisci almeno una fascia oraria valida (mattina o pomeriggio).')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -69,7 +76,8 @@ export default function AdminEditRequest({
         requestId: request.id,
         start_date: form.start_date,
         end_date: form.isPartial ? form.start_date : form.end_date,
-        hours: form.isPartial ? parseInt(form.hours) : null,
+        hours: form.isPartial ? orarioHours(orario) : null,
+        time_ranges: form.isPartial ? orarioToRanges(orario) : null,
         leave_type_id: form.leave_type_id,
         status: form.status,
         admin_notes: form.admin_notes || null,
@@ -147,7 +155,7 @@ export default function AdminEditRequest({
 
           {/* Dates / hours */}
           {form.isPartial ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <div>
                 <label className={labelCls}>Data</label>
                 <input
@@ -158,14 +166,7 @@ export default function AdminEditRequest({
                   className={inputCls}
                 />
               </div>
-              <div>
-                <label className={labelCls}>Ore</label>
-                <select value={form.hours} onChange={e => set('hours', e.target.value)} className={inputCls}>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
-                    <option key={h} value={h}>{h} {h === 1 ? 'ora' : 'ore'}</option>
-                  ))}
-                </select>
-              </div>
+              <OrarioPermesso value={orario} onChange={setOrario} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">

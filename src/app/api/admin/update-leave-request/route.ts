@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
 
   const body = await request.json()
-  const { requestId, start_date, end_date, hours, leave_type_id, status, admin_notes } = body
+  const { requestId, start_date, end_date, hours, time_ranges, leave_type_id, status, admin_notes } = body
 
   if (!requestId) return NextResponse.json({ error: 'requestId mancante' }, { status: 400 })
 
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
   }
   if (start_date)         updates.start_date    = start_date
   if (end_date)           updates.end_date      = end_date
-  if (hours !== undefined) updates.hours        = hours
+  if (hours !== undefined)       updates.hours        = hours
+  if (time_ranges !== undefined) updates.time_ranges  = time_ranges
   if (leave_type_id)      updates.leave_type_id = leave_type_id
   if (status)             updates.status        = status
 

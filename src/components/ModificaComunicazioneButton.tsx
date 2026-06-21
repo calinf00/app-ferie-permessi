@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, XMark } from '@/components/icons'
+import OrarioPermesso, { emptyOrario, orarioToRanges, rangesToOrario, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
+import { type TimeRanges } from '@/lib/leave-utils'
 
 type LeaveType = { id: string; name: string; color: string }
 
@@ -16,6 +18,7 @@ type Comunicazione = {
   end_date: string
   hours: number | null
   notes: string | null
+  time_ranges?: TimeRanges | null
 }
 
 export default function ModificaComunicazioneButton({
@@ -31,11 +34,11 @@ export default function ModificaComunicazioneButton({
 }) {
   const [open, setOpen] = useState(false)
   const [isPartial, setIsPartial] = useState(!!comunicazione.hours)
+  const [orario, setOrario] = useState<OrarioValue>(rangesToOrario(comunicazione.time_ranges))
   const [form, setForm] = useState({
     leave_type_id: comunicazione.leave_type_id ?? leaveTypes[0]?.id ?? '',
     start_date: comunicazione.start_date ?? '',
     end_date: comunicazione.end_date ?? '',
-    hours: String(comunicazione.hours ?? 2),
     notes: comunicazione.notes ?? '',
   })
   const [loading, setLoading] = useState(false)
@@ -79,8 +82,15 @@ export default function ModificaComunicazioneButton({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isPartial && orarioHours(orario) <= 0) {
+      setError('Inserisci almeno una fascia oraria valida (mattina o pomeriggio).')
+      return
+    }
     setLoading(true)
     setError('')
+
+    const hoursVal = isPartial ? orarioHours(orario) : null
+    const rangesVal = isPartial ? orarioToRanges(orario) : null
 
     if (isApproved) {
       // Comunicazione già confermata: invia una richiesta di modifica all'admin
@@ -92,7 +102,8 @@ export default function ModificaComunicazioneButton({
           leave_type_id: form.leave_type_id,
           start_date: form.start_date,
           end_date: isPartial ? form.start_date : form.end_date,
-          hours: isPartial ? parseInt(form.hours) : null,
+          hours: hoursVal,
+          time_ranges: rangesVal,
           notes: form.notes || null,
         }),
       })
@@ -113,7 +124,8 @@ export default function ModificaComunicazioneButton({
         leave_type_id: form.leave_type_id,
         start_date: form.start_date,
         end_date: isPartial ? form.start_date : form.end_date,
-        hours: isPartial ? parseInt(form.hours) : null,
+        hours: hoursVal,
+        time_ranges: rangesVal,
         notes: form.notes || null,
       })
       .eq('id', comunicazione.id)
@@ -187,7 +199,7 @@ export default function ModificaComunicazioneButton({
               )}
 
               {isPartial ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-3">
                   <div>
                     <label className={labelCls}>Data</label>
                     <input
@@ -198,18 +210,7 @@ export default function ModificaComunicazioneButton({
                       className={inputCls}
                     />
                   </div>
-                  <div>
-                    <label className={labelCls}>Ore di permesso</label>
-                    <select
-                      value={form.hours}
-                      onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
-                      className={inputCls}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
-                        <option key={h} value={String(h)}>{h} {h === 1 ? 'ora' : 'ore'}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <OrarioPermesso value={orario} onChange={setOrario} />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

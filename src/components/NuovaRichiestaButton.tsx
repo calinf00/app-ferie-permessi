@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, XMark } from '@/components/icons'
+import OrarioPermesso, { emptyOrario, orarioToRanges, orarioHours, type OrarioValue } from '@/components/OrarioPermesso'
 
 type LeaveType = { id: string; name: string; color: string }
 
@@ -12,11 +13,11 @@ type Conflict = { id: string; start_date: string; end_date: string; hours: numbe
 export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveTypes: LeaveType[]; userId: string }) {
   const [open, setOpen] = useState(false)
   const [isPartial, setIsPartial] = useState(false)
+  const [orario, setOrario] = useState<OrarioValue>(emptyOrario)
   const [form, setForm] = useState({
     leave_type_id: leaveTypes[0]?.id ?? '',
     start_date: '',
     end_date: '',
-    hours: '2',
     notes: '',
   })
   const [loading, setLoading] = useState(false)
@@ -58,6 +59,10 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isPartial && orarioHours(orario) <= 0) {
+      alert('Inserisci almeno una fascia oraria valida (mattina o pomeriggio).')
+      return
+    }
     setLoading(true)
     const payload: Record<string, unknown> = {
       leave_type_id: form.leave_type_id,
@@ -66,11 +71,15 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
       notes: form.notes,
       user_id: userId,
     }
-    if (isPartial) payload.hours = parseInt(form.hours)
+    if (isPartial) {
+      payload.hours = orarioHours(orario)
+      payload.time_ranges = orarioToRanges(orario)
+    }
     await supabase.from('leave_requests').insert(payload)
     setLoading(false)
     setOpen(false)
-    setForm(f => ({ ...f, start_date: '', end_date: '', hours: '2', notes: '' }))
+    setForm(f => ({ ...f, start_date: '', end_date: '', notes: '' }))
+    setOrario(emptyOrario)
     setIsPartial(false)
     router.refresh()
   }
@@ -78,7 +87,8 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
   function handleClose() {
     setOpen(false)
     setIsPartial(false)
-    setForm(f => ({ ...f, start_date: '', end_date: '', hours: '2', notes: '' }))
+    setOrario(emptyOrario)
+    setForm(f => ({ ...f, start_date: '', end_date: '', notes: '' }))
   }
 
   const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-500 transition-colors'
@@ -145,7 +155,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
               )}
 
               {isPartial ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-3">
                   <div>
                     <label className={labelCls}>Data</label>
                     <input
@@ -156,18 +166,7 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                       className={inputCls}
                     />
                   </div>
-                  <div>
-                    <label className={labelCls}>Ore di permesso</label>
-                    <select
-                      value={form.hours}
-                      onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
-                      className={inputCls}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
-                        <option key={h} value={String(h)}>{h} {h === 1 ? 'ora' : 'ore'}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <OrarioPermesso value={orario} onChange={setOrario} />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
