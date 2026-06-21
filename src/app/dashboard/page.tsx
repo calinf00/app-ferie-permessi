@@ -8,7 +8,7 @@ import { SunHorizon, Building, UsersGroup, CalendarDays, DocumentText, ArrowLeft
 import CancelRequestButton from '@/components/CancelRequestButton'
 import ModificaComunicazioneButton from '@/components/ModificaComunicazioneButton'
 import DashboardView from '@/components/DashboardView'
-import { calcAnnualEntitlement, calcUsedDaysInCategory, fmtDays, formatDate, daysDiff, type LeaveRequestForStats } from '@/lib/leave-utils'
+import { calcAnnualEntitlement, calcAnnualEntitlementWeekly, calcUsedDaysInCategory, fmtDays, formatDate, daysDiff, type LeaveRequestForStats } from '@/lib/leave-utils'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'In attesa',
@@ -86,7 +86,7 @@ export default async function DashboardPage({
   const riposiAnnuali    = profile?.annual_riposi_days   ?? 18
   const permssAnnuali    = profile?.annual_permessi_days ?? 5
 
-  const riposiTotale     = calcAnnualEntitlement(riposiAnnuali, profile?.hire_date ?? null, currentYear)
+  const riposiTotale     = calcAnnualEntitlementWeekly(riposiAnnuali, profile?.hire_date ?? null, currentYear)
   const riposiUsati      = calcUsedDaysInCategory('riposi',  statsRequests, currentYear)
   const riposiRimanenti  = Math.max(0, Math.round((riposiTotale - riposiUsati) * 10) / 10)
 

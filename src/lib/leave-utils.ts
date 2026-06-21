@@ -53,6 +53,51 @@ export function calcAnnualEntitlement(annualDays: number, hireDate: string | nul
   return annualDays
 }
 
+// --- Proporzione a settimane (usata per i riposi: conta dal giorno esatto di arrivo) ---
+const WEEKS_PER_YEAR = 52
+
+// Spettanza intero anno, proporzionata alle settimane dalla data di assunzione a fine anno (vista utente)
+export function calcAnnualEntitlementWeekly(annualDays: number, hireDate: string | null, year: number): number {
+  const currentYear = new Date().getFullYear()
+  if (year > currentYear) return 0
+
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+
+  let accrualStart = yearStart
+  if (hireDate) {
+    const hire = new Date(hireDate)
+    if (hire.getFullYear() > year) return 0
+    if (hire > accrualStart) accrualStart = hire
+  }
+
+  const daysRemaining = Math.round((yearEnd.getTime() - accrualStart.getTime()) / 86400000) + 1
+  const fraction = Math.min(daysRemaining / 7 / WEEKS_PER_YEAR, 1)
+  return Math.round(fraction * annualDays * 10) / 10
+}
+
+// Maturato a oggi, proporzionato alle settimane dalla data di assunzione (vista admin)
+export function calcAccruedWeekly(annualDays: number, hireDate: string | null, year: number): number {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  if (year > currentYear) return 0
+
+  const yearStart = new Date(year, 0, 1)
+  let accrualStart = yearStart
+  if (hireDate) {
+    const hire = new Date(hireDate)
+    if (hire.getFullYear() > year) return 0
+    if (hire > accrualStart) accrualStart = hire
+  }
+
+  const accrualEnd = year < currentYear ? new Date(year, 11, 31) : now
+  if (accrualEnd.getTime() < accrualStart.getTime()) return 0
+
+  const daysElapsed = Math.round((accrualEnd.getTime() - accrualStart.getTime()) / 86400000) + 1
+  const fraction = Math.min(daysElapsed / 7 / WEEKS_PER_YEAR, 1)
+  return Math.round(fraction * annualDays * 10) / 10
+}
+
 export function calcUsedDaysInCategory(
   category: 'riposi' | 'permessi',
   requests: LeaveRequestForStats[],

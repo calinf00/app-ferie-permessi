@@ -7,7 +7,9 @@ import AdminGestioneAssenze, { type FullLeaveRequest } from '@/components/AdminG
 import {
   categorizeLeaveType,
   calcAccruedMonthly,
+  calcAccruedWeekly,
   calcAnnualEntitlement,
+  calcAnnualEntitlementWeekly,
   calcUsedDaysInCategory,
   calcAltroByType,
   fmtDays,
@@ -46,7 +48,7 @@ function YearPanel({ year, user, requests }: {
   const currentYear = new Date().getFullYear()
   const isPast = year < currentYear
 
-  const riposiMaturati = calcAccruedMonthly(user.annual_riposi_days, user.hire_date, year)
+  const riposiMaturati = calcAccruedWeekly(user.annual_riposi_days, user.hire_date, year)
   const riposiUsati    = calcUsedDaysInCategory('riposi', requests, year)
   const riposiDelta    = Math.max(0, Math.round((riposiMaturati - riposiUsati) * 10) / 10)
 
@@ -242,7 +244,7 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                 {/* Quick summary for current year */}
                 {(() => {
                   const cy = new Date().getFullYear()
-                  const riposiR = Math.max(0, Math.round((calcAnnualEntitlement(u.annual_riposi_days, u.hire_date, cy) - calcUsedDaysInCategory('riposi', statsRequests, cy)) * 10) / 10)
+                  const riposiR = Math.max(0, Math.round((calcAnnualEntitlementWeekly(u.annual_riposi_days, u.hire_date, cy) - calcUsedDaysInCategory('riposi', statsRequests, cy)) * 10) / 10)
                   const permssR = Math.max(0, Math.round((calcAnnualEntitlement(u.annual_permessi_days, u.hire_date, cy) - calcUsedDaysInCategory('permessi', statsRequests, cy)) * 10) / 10)
                   return (
                     <div className="mt-3 flex gap-3">
