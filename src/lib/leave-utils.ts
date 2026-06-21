@@ -13,47 +13,7 @@ export function categorizeLeaveType(name: string): 'riposi' | 'permessi' | 'altr
   return 'altro'
 }
 
-// Accrued to today — used in admin view to show progress during the year
-export function calcAccruedMonthly(annualDays: number, hireDate: string | null, year: number): number {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-
-  if (year > currentYear) return 0
-
-  let startMonth = 0
-
-  if (hireDate) {
-    const hire = new Date(hireDate)
-    const hireYear = hire.getFullYear()
-    if (hireYear > year) return 0
-    if (hireYear === year) startMonth = hire.getMonth()
-  }
-
-  const endMonth = year < currentYear ? 11 : now.getMonth()
-  const monthsElapsed = endMonth - startMonth + 1
-  return Math.round((monthsElapsed / 12) * annualDays * 10) / 10
-}
-
-// Full-year entitlement — used in user view (hire month → December, not today)
-export function calcAnnualEntitlement(annualDays: number, hireDate: string | null, year: number): number {
-  const currentYear = new Date().getFullYear()
-
-  if (year > currentYear) return 0
-
-  if (hireDate) {
-    const hire = new Date(hireDate)
-    const hireYear = hire.getFullYear()
-    if (hireYear > year) return 0
-    if (hireYear === year) {
-      const monthsEntitled = 12 - hire.getMonth()
-      return Math.round((monthsEntitled / 12) * annualDays * 10) / 10
-    }
-  }
-
-  return annualDays
-}
-
-// --- Proporzione a settimane (usata per i riposi: conta dal giorno esatto di arrivo) ---
+// --- Proporzione a settimane (riposi e permessi: conta dal giorno esatto di arrivo) ---
 const WEEKS_PER_YEAR = 52
 
 // Spettanza intero anno, proporzionata alle settimane dalla data di assunzione a fine anno (vista utente)
