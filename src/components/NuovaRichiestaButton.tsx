@@ -24,6 +24,14 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
   const router = useRouter()
   const supabase = createClient()
 
+  // Le ore hanno senso solo per permesso/ferie/congedo: per malattia e "altro" (giornata intera) le nascondiamo
+  const selectedType = leaveTypes.find(lt => lt.id === form.leave_type_id)
+  const allowsHours = !['malatt', 'altro'].some(k => (selectedType?.name?.toLowerCase() ?? '').includes(k))
+
+  useEffect(() => {
+    if (!allowsHours && isPartial) setIsPartial(false)
+  }, [allowsHours, isPartial])
+
   useEffect(() => {
     let cancelled = false
     async function check() {
@@ -116,23 +124,25 @@ export default function NuovaRichiestaButton({ leaveTypes, userId }: { leaveType
                 </select>
               </div>
 
-              {/* Toggle giornata intera / permesso a ore */}
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setIsPartial(false)}
-                  className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors ${!isPartial ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-                >
-                  Giornata intera
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPartial(true)}
-                  className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors ${isPartial ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-                >
-                  Permesso a ore
-                </button>
-              </div>
+              {/* Toggle giornata intera / seleziona ore (solo per i tipi che lo prevedono) */}
+              {allowsHours && (
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setIsPartial(false)}
+                    className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors ${!isPartial ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+                  >
+                    Giornata intera
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPartial(true)}
+                    className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors ${isPartial ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+                  >
+                    Seleziona ore
+                  </button>
+                </div>
+              )}
 
               {isPartial ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

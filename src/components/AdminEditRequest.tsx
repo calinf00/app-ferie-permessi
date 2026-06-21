@@ -140,7 +140,7 @@ export default function AdminEditRequest({
                 onClick={() => set('isPartial', true)}
                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${form.isPartial ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Permesso a ore
+                Seleziona ore
               </button>
             </div>
           </div>
