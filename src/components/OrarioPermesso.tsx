@@ -1,6 +1,11 @@
 'use client'
 
-import { hoursFromRanges, fmtDays, type TimeRanges } from '@/lib/leave-utils'
+import { hoursFromRanges, type TimeRanges } from '@/lib/leave-utils'
+
+// Mostra fino a 2 decimali, senza zeri finali inutili (2 -> "2", 2.5 -> "2.5", 2.25 -> "2.25")
+function fmtHours(n: number): string {
+  return (Math.round(n * 100) / 100).toString()
+}
 
 export type OrarioValue = { mStart: string; mEnd: string; aStart: string; aEnd: string }
 
@@ -70,7 +75,7 @@ export default function OrarioPermesso({
       </div>
 
       <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-        Totale: <span className="font-semibold text-gray-700">{fmtDays(total)} {total === 1 ? 'ora' : 'ore'}</span>
+        Totale: <span className="font-semibold text-gray-700">{fmtHours(total)} {total === 1 ? 'ora' : 'ore'}</span>
       </p>
     </div>
   )
