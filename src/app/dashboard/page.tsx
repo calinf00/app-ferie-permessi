@@ -88,11 +88,11 @@ export default async function DashboardPage({
 
   const riposiTotale     = calcAnnualEntitlementWeekly(riposiAnnuali, profile?.hire_date ?? null, currentYear)
   const riposiUsati      = calcUsedDaysInCategory('riposi',  statsRequests, currentYear)
-  const riposiRimanenti  = Math.max(0, Math.round((riposiTotale - riposiUsati) * 10) / 10)
+  const riposiRimanenti  = Math.max(0, Math.round((riposiTotale - riposiUsati) * 100) / 100)
 
   const permssTotale     = calcAnnualEntitlementWeekly(permssAnnuali, profile?.hire_date ?? null, currentYear)
   const permssUsati      = calcUsedDaysInCategory('permessi', statsRequests, currentYear)
-  const permssRimanenti  = Math.max(0, Math.round((permssTotale - permssUsati) * 10) / 10)
+  const permssRimanenti  = Math.max(0, Math.round((permssTotale - permssUsati) * 100) / 100)
 
   let teamRequests: TeamRequest[] = []
   if (activeTab === 'team' && profile?.team) {

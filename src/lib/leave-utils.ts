@@ -33,7 +33,7 @@ export function calcAnnualEntitlementWeekly(annualDays: number, hireDate: string
 
   const daysRemaining = Math.round((yearEnd.getTime() - accrualStart.getTime()) / 86400000) + 1
   const fraction = Math.min(daysRemaining / 7 / WEEKS_PER_YEAR, 1)
-  return Math.round(fraction * annualDays * 10) / 10
+  return Math.round(fraction * annualDays * 100) / 100
 }
 
 // Maturato a oggi, proporzionato alle settimane dalla data di assunzione (vista admin)
@@ -55,7 +55,7 @@ export function calcAccruedWeekly(annualDays: number, hireDate: string | null, y
 
   const daysElapsed = Math.round((accrualEnd.getTime() - accrualStart.getTime()) / 86400000) + 1
   const fraction = Math.min(daysElapsed / 7 / WEEKS_PER_YEAR, 1)
-  return Math.round(fraction * annualDays * 10) / 10
+  return Math.round(fraction * annualDays * 100) / 100
 }
 
 export function calcUsedDaysInCategory(
@@ -123,8 +123,8 @@ export function calcAltroByType(
 }
 
 export function fmtDays(n: number): string {
-  const rounded = Math.round(n * 10) / 10
-  return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1)
+  // Fino a 2 decimali, senza zeri finali inutili (5 -> "5", 4.7 -> "4.7", 4.75 -> "4.75")
+  return (Math.round(n * 100) / 100).toString()
 }
 
 export function formatDate(d: string) {

@@ -48,12 +48,12 @@ function YearPanel({ year, user, requests }: {
   const riposiMaturati = calcAccruedWeekly(user.annual_riposi_days, user.hire_date, year)
   const riposiAnnui    = calcAnnualEntitlementWeekly(user.annual_riposi_days, user.hire_date, year)
   const riposiUsati    = calcUsedDaysInCategory('riposi', requests, year)
-  const riposiDelta    = Math.max(0, Math.round((riposiMaturati - riposiUsati) * 10) / 10)
+  const riposiDelta    = Math.max(0, Math.round((riposiMaturati - riposiUsati) * 100) / 100)
 
   const permssMaturati = calcAccruedWeekly(user.annual_permessi_days, user.hire_date, year)
   const permssAnnui    = calcAnnualEntitlementWeekly(user.annual_permessi_days, user.hire_date, year)
   const permssUsati    = calcUsedDaysInCategory('permessi', requests, year)
-  const permssDelta    = Math.max(0, Math.round((permssMaturati - permssUsati) * 10) / 10)
+  const permssDelta    = Math.max(0, Math.round((permssMaturati - permssUsati) * 100) / 100)
 
   const altro = calcAltroByType(requests, year)
 
@@ -396,8 +396,8 @@ export default function AdminCollaboratori({ users }: { users: UserWithRequests[
                 {/* Quick summary for current year */}
                 {(() => {
                   const cy = new Date().getFullYear()
-                  const riposiR = Math.max(0, Math.round((calcAnnualEntitlementWeekly(u.annual_riposi_days, u.hire_date, cy) - calcUsedDaysInCategory('riposi', statsRequests, cy)) * 10) / 10)
-                  const permssR = Math.max(0, Math.round((calcAnnualEntitlementWeekly(u.annual_permessi_days, u.hire_date, cy) - calcUsedDaysInCategory('permessi', statsRequests, cy)) * 10) / 10)
+                  const riposiR = Math.max(0, Math.round((calcAnnualEntitlementWeekly(u.annual_riposi_days, u.hire_date, cy) - calcUsedDaysInCategory('riposi', statsRequests, cy)) * 100) / 100)
+                  const permssR = Math.max(0, Math.round((calcAnnualEntitlementWeekly(u.annual_permessi_days, u.hire_date, cy) - calcUsedDaysInCategory('permessi', statsRequests, cy)) * 100) / 100)
                   return (
                     <div className="mt-3 flex gap-3">
                       <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2 flex items-center justify-between">
